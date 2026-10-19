@@ -51,8 +51,21 @@ export default function App() {
   // Weather Condition State
   const [weatherMode, setWeatherMode] = useState('clear'); // 'clear' | 'rain' | 'night'
 
+  // Live Traffic Facility Overlay
+  const [showTraffic, setShowTraffic] = useState(false);
+
   // Driver Passport Logged Hours
   const [loggedHours, setLoggedHours] = useState(18);
+
+  // Sync initial logged hours from backend
+  useEffect(() => {
+    fetch('/api/passport')
+      .then(res => res.json())
+      .then(data => {
+        if (data?.loggedHours) setLoggedHours(data.loggedHours);
+      })
+      .catch(() => {});
+  }, []);
 
   // Active Navigation State
   const [routeData, setRouteData] = useState(null);
@@ -182,10 +195,19 @@ export default function App() {
     });
   };
 
-  // Add practice hour
-  const handleAddPracticeHour = () => {
+  // Add practice hour with backend persistence
+  const handleAddPracticeHour = async () => {
     setLoggedHours(prev => prev + 1);
     siriVoice.speak("Practice hour logged! Check your passport for new milestone badges.");
+    try {
+      await fetch('/api/passport/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hours: 1 })
+      });
+    } catch {
+      // Offline fallback: state already incremented locally
+    }
   };
 
   // Recenter map to user location
@@ -264,6 +286,7 @@ export default function App() {
         activeDmvRoute={activeDmvRoute}
         recenterTrigger={recenterTrigger}
         learnerZones={learnerZones}
+        showTraffic={showTraffic}
       />
 
       {/* Top Device & View Controls */}
@@ -275,6 +298,8 @@ export default function App() {
         isDarkMode={isDarkMode}
         setIsDarkMode={setIsDarkMode}
         onRecenter={handleRecenter}
+        showTraffic={showTraffic}
+        setShowTraffic={setShowTraffic}
       />
 
       {/* NAVIGATION ACTIVE HUD */}

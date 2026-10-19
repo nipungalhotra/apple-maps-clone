@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Apple Maps Learner</string>
+    <string name="title_activity_main">Apple Maps Learner</string>
+    <string name="package_name">com.applemap.learner</string>
+    <string name="custom_url_scheme">com.applemap.learner</string>
+</resources>

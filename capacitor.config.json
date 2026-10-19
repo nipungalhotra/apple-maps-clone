@@ -1,0 +1,14 @@
+{
+  "appId": "com.applemap.learner",
+  "appName": "Apple Maps Learner",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  },
+  "plugins": {
+    "Geolocation": {
+      "permissions": ["location"]
+    }
+  }
+}

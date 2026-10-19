@@ -1,0 +1,11 @@
+{
+  "loggedHours": 18,
+  "targetHours": 50,
+  "nightHours": 5,
+  "highwayHours": 3,
+  "badges": [
+    "First Ignition",
+    "Friction Master",
+    "Cone Wizard"
+  ]
+}

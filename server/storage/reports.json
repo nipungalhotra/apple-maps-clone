@@ -1,0 +1,30 @@
+{
+  "candlestick-open-ground": [
+    {
+      "id": "rep-1",
+      "author": "Marcus V.",
+      "timeAgo": "2h ago",
+      "status": "Gate Open",
+      "surface": "Dry & Clear",
+      "notes": "Completely empty right now. Only 1 other learner practicing manual."
+    },
+    {
+      "id": "rep-2",
+      "author": "Elena R.",
+      "timeAgo": "Yesterday",
+      "status": "Gate Open",
+      "surface": "Clean",
+      "notes": "Great breeze. Great for motorcycle counter-steering."
+    }
+  ],
+  "ccsf-lower-parking": [
+    {
+      "id": "rep-3",
+      "author": "Sarah K.",
+      "timeAgo": "4h ago",
+      "status": "Open Weekend",
+      "surface": "Paved",
+      "notes": "No campus security. Painted bays make parallel parking super easy."
+    }
+  ]
+}

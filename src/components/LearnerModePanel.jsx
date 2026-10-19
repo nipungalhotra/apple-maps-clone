@@ -48,10 +48,22 @@ export default function LearnerModePanel({
   // Passport modal visibility
   const [isPassportOpen, setIsPassportOpen] = useState(false);
 
-  // Community Reports local state
+  // Community Reports local and backend state
   const [communityReports, setCommunityReports] = useState(INITIAL_COMMUNITY_REPORTS);
   const [newReportText, setNewReportText] = useState('');
   const [newGateStatus, setNewGateStatus] = useState('Open');
+
+  // Sync community reports from backend
+  useEffect(() => {
+    fetch('/api/community-reports')
+      .then(res => res.json())
+      .then(data => {
+        if (data && typeof data === 'object') {
+          setCommunityReports(prev => ({ ...prev, ...data }));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const zones = getFilteredLearnerZones({
     vehicleType: vehicleFilter,
@@ -79,7 +91,7 @@ export default function LearnerModePanel({
 
   const currentZoneReports = activeZone ? (communityReports[activeZone.id] || []) : [];
 
-  const handleAddCommunityReport = () => {
+  const handleAddCommunityReport = async () => {
     if (!newReportText.trim() || !activeZone) return;
     const newEntry = {
       id: `rep-${Date.now()}`,
@@ -95,7 +107,24 @@ export default function LearnerModePanel({
       ...prev,
       [activeZone.id]: [newEntry, ...(prev[activeZone.id] || [])]
     }));
+    const submittedText = newReportText.trim();
     setNewReportText('');
+
+    try {
+      await fetch('/api/community-reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          zoneId: activeZone.id,
+          author: 'You (Learner)',
+          status: newGateStatus,
+          surface: weatherMode === 'rain' ? 'Wet Surface' : 'Dry & Clear',
+          notes: submittedText
+        })
+      });
+    } catch {
+      // Local state fallback preserved
+    }
   };
 
   return (
