@@ -322,6 +322,46 @@ app.post('/api/subscription/reset', (req, res) => {
   }
 });
 
+// 10. Model 3: Auto Insurance Affiliate Quote Dispatch
+const INSURANCE_CLICKS_FILE = path.join(STORAGE_DIR, 'insurance_clicks.json');
+if (!fs.existsSync(INSURANCE_CLICKS_FILE)) {
+  fs.writeFileSync(INSURANCE_CLICKS_FILE, JSON.stringify([], null, 2));
+}
+
+app.post('/api/affiliates/insurance-click', (req, res) => {
+  try {
+    const clickData = req.body;
+    const raw = fs.readFileSync(INSURANCE_CLICKS_FILE, 'utf-8');
+    const clicks = JSON.parse(raw);
+
+    const record = {
+      id: `aff-click-${Date.now()}`,
+      partnerId: clickData.partnerId,
+      partnerName: clickData.partnerName,
+      cpaPayout: clickData.cpaPayout || 75.00,
+      estimatedSavings: clickData.estimatedSavings,
+      driverAge: clickData.driverAge,
+      loggedHours: clickData.loggedHours,
+      timestamp: new Date().toISOString()
+    };
+
+    clicks.unshift(record);
+    fs.writeFileSync(INSURANCE_CLICKS_FILE, JSON.stringify(clicks, null, 2));
+    res.json({ success: true, trackingRecord: record, totalDispatchedLeads: clicks.length });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to track insurance affiliate click', details: err.message });
+  }
+});
+
+app.get('/api/affiliates/insurance-clicks', (req, res) => {
+  try {
+    const raw = fs.readFileSync(INSURANCE_CLICKS_FILE, 'utf-8');
+    res.json(JSON.parse(raw));
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to read insurance clicks', details: err.message });
+  }
+});
+
 // In production, serve the built frontend assets
 const distPath = path.join(__dirname, '../dist');
 if (fs.existsSync(distPath)) {
