@@ -1,6 +1,6 @@
 {
-  "appId": "com.applemap.learner",
-  "appName": "Apple Maps Learner",
+  "appId": "com.roadready.app",
+  "appName": "RoadReady",
   "webDir": "dist",
   "server": {
     "androidScheme": "https",

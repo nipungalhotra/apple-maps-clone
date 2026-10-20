@@ -156,7 +156,7 @@ export default function LearnerModePanel({
             </div>
             <div>
               <h3 className="text-sm font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
-                Learner FreeSpace Engine
+                RoadReady Engine
                 {isPro ? (
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black shadow-sm">
                     PRO PASS 👑

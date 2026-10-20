@@ -100,7 +100,7 @@ export default function DesktopSidebar({
             }`}
           >
             <ShieldCheck className="w-3.5 h-3.5" />
-            Learner Grounds 🔰
+            RoadReady 🔰
           </button>
         </div>
 

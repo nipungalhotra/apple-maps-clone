@@ -97,7 +97,7 @@ export default function PrintableDmvLogModal({
             </div>
             <div>
               <span className="block text-[10px] font-bold uppercase text-zinc-500">Verification Source</span>
-              <span className="font-bold text-emerald-700">Apple Maps FreeSpace GPS</span>
+              <span className="font-bold text-emerald-700">RoadReady Certified GPS</span>
             </div>
           </div>
 
@@ -178,7 +178,7 @@ export default function PrintableDmvLogModal({
 
           {/* Footer note */}
           <div className="text-[9px] text-zinc-400 text-center pt-2">
-            Generated via Apple Maps Learner FreeSpace Engine • Digital Hash: #A89F-2026-CA • Approved for Submission at Road Test
+            Generated via RoadReady Certified Driving Engine • Digital Hash: #RR-9482-CA • Approved for Submission at Road Test
           </div>
         </div>
 

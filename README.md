@@ -1,6 +1,6 @@
-# Apple Maps Clone + Learner FreeSpace Engine (Desktop + Mobile)
+# RoadReady: Safe Driving Grounds & DMV Test Prep Engine
 
-A high-fidelity clone of Apple Maps based on reverse-engineering analysis of macOS `Maps.app` (`Maps_iosmac`) and iOS Apple Maps, featuring a comprehensive **Learner Driver & Rider FreeSpace Engine**.
+A high-fidelity navigation and driver education platform featuring the **RoadReady FreeSpace Engine** — discovering empty parking lots, quiet practice boulevards, virtual cone courses, official DMV examiner route simulations, and 1-on-1 driving coach marketplace.
 
 ---
 
