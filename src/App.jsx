@@ -4,6 +4,7 @@ import DesktopSidebar from './components/DesktopSidebar';
 import MobileBottomSheet from './components/MobileBottomSheet';
 import NavigationHUD from './components/NavigationHUD';
 import DeviceModeBar from './components/DeviceModeBar';
+import LearnerProPaywallModal from './components/LearnerProPaywallModal';
 import { PRESET_PLACES } from './data/presetPlaces';
 import { LEARNER_ZONES } from './data/learnerZones';
 import { CONE_PRESETS } from './data/conePresets';
@@ -12,6 +13,7 @@ import { searchLocations } from './services/searchService';
 import { calculateRoute } from './services/routingService';
 import { siriVoice } from './services/voiceService';
 import { generateLearnerZonesForLocation } from './services/learnerEngine';
+import { getSubscriptionState } from './services/subscriptionService';
 
 export default function App() {
   const [viewMode, setViewMode] = useState('desktop'); // 'desktop' | 'mobile' | 'responsive'
@@ -53,6 +55,21 @@ export default function App() {
 
   // Live Traffic Facility Overlay
   const [showTraffic, setShowTraffic] = useState(false);
+
+  // B2C Pro Pass Subscription State
+  const [subState, setSubState] = useState(getSubscriptionState);
+  const isPro = subState.isPro;
+  const [isPaywallOpen, setIsPaywallOpen] = useState(false);
+  const [paywallFeature, setPaywallFeature] = useState(null);
+
+  const handleOpenPaywall = (feature = null) => {
+    setPaywallFeature(feature);
+    setIsPaywallOpen(true);
+  };
+
+  const handleSubscriptionChange = (newSubState) => {
+    setSubState(newSubState);
+  };
 
   // Driver Passport Logged Hours
   const [loggedHours, setLoggedHours] = useState(18);
@@ -300,6 +317,8 @@ export default function App() {
         onRecenter={handleRecenter}
         showTraffic={showTraffic}
         setShowTraffic={setShowTraffic}
+        isPro={isPro}
+        onOpenPaywall={handleOpenPaywall}
       />
 
       {/* NAVIGATION ACTIVE HUD */}
@@ -355,6 +374,8 @@ export default function App() {
               loggedHours={loggedHours}
               onAddPracticeHour={handleAddPracticeHour}
               onSelectCurrentLocation={handleRecenter}
+              isPro={isPro}
+              onOpenPaywall={handleOpenPaywall}
             />
           )}
 
@@ -395,6 +416,8 @@ export default function App() {
               loggedHours={loggedHours}
               onAddPracticeHour={handleAddPracticeHour}
               onSelectCurrentLocation={handleRecenter}
+              isPro={isPro}
+              onOpenPaywall={handleOpenPaywall}
             />
           )}
         </>
@@ -439,6 +462,14 @@ export default function App() {
           {MapContent}
         </div>
       )}
+      {/* B2C Learner PRO Pass Paywall Modal */}
+      <LearnerProPaywallModal
+        isOpen={isPaywallOpen}
+        onClose={() => setIsPaywallOpen(false)}
+        isPro={isPro}
+        onSubscriptionChange={handleSubscriptionChange}
+        highlightFeature={paywallFeature}
+      />
     </div>
   );
 }

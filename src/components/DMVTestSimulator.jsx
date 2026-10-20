@@ -1,20 +1,28 @@
 import React, { useState } from 'react';
 import {
   Award, CheckCircle2, AlertCircle, Play, ChevronRight, Volume2, Shield,
-  ArrowRight, Check, X
+  ArrowRight, Check, X, Lock
 } from 'lucide-react';
 import { DMV_TEST_ROUTES } from '../data/dmvTestRoutes';
 import { siriVoice } from '../services/voiceService';
+import { canExecuteDmvTestDrive } from '../services/subscriptionService';
 
 export default function DMVTestSimulator({
   selectedDmvRoute,
   setSelectedDmvRoute,
-  onStartDmvTestDrive
+  onStartDmvTestDrive,
+  isPro = false,
+  onOpenPaywall
 }) {
   const activeRoute = selectedDmvRoute || DMV_TEST_ROUTES[0];
   const [completedCheckpoints, setCompletedCheckpoints] = useState({});
 
   const toggleCheckpoint = (cpId, points, instruction) => {
+    if (!isPro) {
+      if (onOpenPaywall) onOpenPaywall('dmv');
+      return;
+    }
+
     setCompletedCheckpoints(prev => {
       const next = { ...prev };
       if (next[cpId]) {
@@ -26,6 +34,14 @@ export default function DMVTestSimulator({
       }
       return next;
     });
+  };
+
+  const handleStartTest = () => {
+    if (!canExecuteDmvTestDrive(isPro)) {
+      if (onOpenPaywall) onOpenPaywall('dmv');
+      return;
+    }
+    onStartDmvTestDrive(activeRoute);
   };
 
   const currentScore = Object.values(completedCheckpoints).reduce((sum, p) => sum + p, 0);
@@ -40,8 +56,13 @@ export default function DMVTestSimulator({
             <Award className="w-4 h-4" />
           </div>
           <div>
-            <h4 className="text-xs font-black text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
+            <h4 className="text-xs font-black text-zinc-900 dark:text-zinc-100 uppercase tracking-wide flex items-center gap-1.5">
               Official DMV Test Simulator
+              {!isPro && (
+                <span className="text-[9px] font-bold text-amber-600 bg-amber-500/15 px-1.5 py-0.2 rounded-full">
+                  PREVIEW MODE
+                </span>
+              )}
             </h4>
             <p className="text-[10px] text-zinc-400">
               Mock Examiner Road Test & Checkpoints
@@ -83,18 +104,38 @@ export default function DMVTestSimulator({
 
       {/* Start Test Drive CTA */}
       <button
-        onClick={() => onStartDmvTestDrive(activeRoute)}
-        className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all"
+        onClick={handleStartTest}
+        className={`w-full py-2.5 font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all ${
+          isPro
+            ? 'bg-blue-600 hover:bg-blue-700 text-white'
+            : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-95 text-white'
+        }`}
       >
-        <Play className="w-3.5 h-3.5 fill-white" />
-        Drive Official Test Route with Examiner Audio
+        {isPro ? (
+          <>
+            <Play className="w-3.5 h-3.5 fill-white" />
+            <span>Drive Official Test Route with Examiner Audio</span>
+          </>
+        ) : (
+          <>
+            <Lock className="w-3.5 h-3.5" />
+            <span>Unlock Interactive Examiner Drive (PRO)</span>
+          </>
+        )}
       </button>
 
       {/* Examiner Checkpoints Checklist */}
       <div className="space-y-1.5 pt-1">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 px-1 block">
-          Examiner Evaluation Points ({activeRoute.checkpoints.length}):
-        </span>
+        <div className="flex items-center justify-between px-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+            Examiner Evaluation Points ({activeRoute.checkpoints.length}):
+          </span>
+          {!isPro && (
+            <span className="text-[9px] text-amber-500 font-bold flex items-center gap-1">
+              <Lock className="w-2.5 h-2.5" /> Audio scoring locked
+            </span>
+          )}
+        </div>
 
         {activeRoute.checkpoints.map((cp, idx) => {
           const isDone = !!completedCheckpoints[cp.id];
@@ -102,29 +143,27 @@ export default function DMVTestSimulator({
             <div
               key={cp.id}
               onClick={() => toggleCheckpoint(cp.id, cp.points, cp.instruction)}
-              className={`p-2.5 rounded-xl border transition-all cursor-pointer text-xs ${
+              className={`p-2 rounded-xl border text-xs flex items-center justify-between cursor-pointer transition-all ${
                 isDone
-                  ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-900 dark:text-emerald-200'
+                  ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-900 dark:text-emerald-100'
                   : 'bg-white/50 dark:bg-zinc-700/50 hover:bg-white border-black/5 dark:border-white/5 text-zinc-700 dark:text-zinc-300'
               }`}
             >
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-2">
-                  <div className={`w-4 h-4 rounded-full flex items-center justify-center mt-0.5 shrink-0 ${
-                    isDone ? 'bg-emerald-500 text-white' : 'border border-zinc-400'
-                  }`}>
-                    {isDone && <Check className="w-3 h-3 stroke-[3]" />}
-                  </div>
-                  <div>
-                    <span className="font-bold block">{idx + 1}. {cp.title}</span>
-                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-tight block mt-0.5">
-                      {cp.instruction}
-                    </span>
-                  </div>
+              <div className="flex items-center gap-2">
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                  isDone ? 'bg-emerald-500 text-white' : 'bg-black/10 dark:bg-white/10 text-zinc-500'
+                }`}>
+                  {isDone ? <Check className="w-3 h-3" /> : idx + 1}
                 </div>
-                <span className="text-[10px] font-black text-blue-600 dark:text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded-full shrink-0">
-                  +{cp.points} pts
-                </span>
+                <div>
+                  <span className="font-semibold block">{cp.instruction}</span>
+                  <span className="text-[9px] text-zinc-400">Critical Check: {cp.points} pts</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1">
+                {isPro && <Volume2 className="w-3.5 h-3.5 text-zinc-400 hover:text-blue-500" />}
+                {!isPro && <Lock className="w-3 h-3 text-zinc-400" />}
               </div>
             </div>
           );

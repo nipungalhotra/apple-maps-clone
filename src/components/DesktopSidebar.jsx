@@ -48,7 +48,10 @@ export default function DesktopSidebar({
   setWeatherMode,
   // Passport props
   loggedHours,
-  onAddPracticeHour
+  onAddPracticeHour,
+  // B2C Pro Pass props
+  isPro = false,
+  onOpenPaywall
 }) {
   const isFavorite = selectedPlace && favorites.some(f => f.id === selectedPlace.id);
 
@@ -164,6 +167,8 @@ export default function DesktopSidebar({
             setWeatherMode={setWeatherMode}
             loggedHours={loggedHours}
             onAddPracticeHour={onAddPracticeHour}
+            isPro={isPro}
+            onOpenPaywall={onOpenPaywall}
           />
         )}
 

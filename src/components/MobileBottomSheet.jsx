@@ -48,7 +48,10 @@ export default function MobileBottomSheet({
   setWeatherMode,
   // Passport props
   loggedHours,
-  onAddPracticeHour
+  onAddPracticeHour,
+  // B2C Pro Pass props
+  isPro = false,
+  onOpenPaywall
 }) {
   const [sheetState, setSheetState] = useState(selectedPlace || routeData || selectedLearnerZone ? 'half' : 'peek');
   const isFavorite = selectedPlace && favorites.some(f => f.id === selectedPlace.id);
@@ -172,6 +175,8 @@ export default function MobileBottomSheet({
             setWeatherMode={setWeatherMode}
             loggedHours={loggedHours}
             onAddPracticeHour={onAddPracticeHour}
+            isPro={isPro}
+            onOpenPaywall={onOpenPaywall}
           />
         )}
 

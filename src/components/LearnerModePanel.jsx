@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ShieldCheck, Car, Bike, Navigation, Clock, Sparkles, CheckCircle2,
   AlertTriangle, ChevronRight, Award, Sliders, Calendar, HelpCircle,
   Eye, Check, XCircle, CloudRain, Sun, Moon, MessageSquare, Plus,
-  Trophy, Activity, Send
+  Trophy, Activity, Send, Lock, Zap
 } from 'lucide-react';
 import { getFilteredLearnerZones, getDrillsForVehicle, evaluateLocationSafety } from '../services/learnerEngine';
 import { WEATHER_CONDITIONS, calculateWeatherAdjustedSafety } from '../services/weatherSafetyService';
 import { INITIAL_COMMUNITY_REPORTS } from '../data/communityReports';
+import { canAccessZone } from '../services/subscriptionService';
 import ConeCourseBuilder from './ConeCourseBuilder';
 import DMVTestSimulator from './DMVTestSimulator';
 import LearnerPassportModal from './LearnerPassportModal';
@@ -35,7 +36,10 @@ export default function LearnerModePanel({
   setWeatherMode,
   // Passport state
   loggedHours,
-  onAddPracticeHour
+  onAddPracticeHour,
+  // B2C Pro Pass State
+  isPro = false,
+  onOpenPaywall
 }) {
   const [vehicleFilter, setVehicleFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -91,6 +95,14 @@ export default function LearnerModePanel({
 
   const currentZoneReports = activeZone ? (communityReports[activeZone.id] || []) : [];
 
+  const handleZoneClick = (zone, index) => {
+    if (!canAccessZone(index, isPro)) {
+      if (onOpenPaywall) onOpenPaywall('grounds');
+      return;
+    }
+    onSelectZone(zone);
+  };
+
   const handleAddCommunityReport = async () => {
     if (!newReportText.trim() || !activeZone) return;
     const newEntry = {
@@ -130,16 +142,34 @@ export default function LearnerModePanel({
   return (
     <div className="space-y-3 animate-fadeIn">
       {/* Top Header Card */}
-      <div className="p-3 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-transparent rounded-2xl border border-emerald-500/20">
+      <div className={`p-3 rounded-2xl border transition-all ${
+        isPro
+          ? 'bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-transparent border-amber-500/30'
+          : 'bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-transparent border-emerald-500/20'
+      }`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-md">
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shadow-md ${
+              isPro ? 'bg-amber-500 text-white' : 'bg-emerald-500 text-white'
+            }`}>
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
               <h3 className="text-sm font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
                 Learner FreeSpace Engine
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500 text-white font-bold">PRO SUITE</span>
+                {isPro ? (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black shadow-sm">
+                    PRO PASS 👑
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => onOpenPaywall && onOpenPaywall()}
+                    className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-black flex items-center gap-1 shadow-sm transition-all"
+                  >
+                    <Zap className="w-2.5 h-2.5 fill-white" />
+                    <span>UPGRADE $29.99</span>
+                  </button>
+                )}
               </h3>
               <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
                 Safe grounds, virtual cones, DMV tests, & live weather
@@ -203,13 +233,53 @@ export default function LearnerModePanel({
         </div>
       </div>
 
-      {/* Weather Hazard Banner if Rain is active */}
+      {/* Dynamic Rain / Wet Braking Distance Multiplier HUD */}
       {weatherMode === 'rain' && (
-        <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/30 text-xs flex items-center gap-2 text-blue-900 dark:text-blue-200 animate-slideDown">
-          <CloudRain className="w-4 h-4 text-apple-blue shrink-0 animate-bounce" />
-          <span>
-            <strong>Wet Surface Active:</strong> Stopping distance is <strong>1.8x longer</strong>. Bike traction penalty applied (-25%).
-          </span>
+        <div className="p-3 rounded-2xl bg-gradient-to-r from-blue-500/15 via-indigo-500/10 to-blue-500/5 border border-blue-500/30 text-xs space-y-2 animate-slideDown">
+          <div className="flex items-center justify-between text-blue-900 dark:text-blue-200">
+            <span className="flex items-center gap-1.5 font-bold">
+              <CloudRain className="w-4 h-4 text-apple-blue shrink-0 animate-bounce" />
+              <span>Wet Surface Physics: <strong>1.8x Stopping Distance</strong></span>
+            </span>
+            <span className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400 bg-blue-500/20 px-2 py-0.5 rounded-full">
+              μ = 0.35 Friction
+            </span>
+          </div>
+
+          {/* PRO Dynamic Braking Distance Telemetry HUD */}
+          {isPro ? (
+            <div className="p-2.5 bg-white/70 dark:bg-zinc-800/70 rounded-xl border border-blue-500/20 space-y-2">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-zinc-500 dark:text-zinc-400 font-medium">Braking from 35 mph:</span>
+                <span className="font-mono font-bold text-blue-600">63 meters (+28m wet lag)</span>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-[9px] text-zinc-400">
+                  <span>Dry Road (35m)</span>
+                  <span>Wet Asphalt (63m)</span>
+                </div>
+                <div className="w-full h-2 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden flex">
+                  <div className="w-[55%] bg-emerald-500 h-full"></div>
+                  <div className="w-[45%] bg-rose-500 h-full animate-pulse"></div>
+                </div>
+              </div>
+              <div className="text-[10px] text-zinc-500 leading-tight">
+                💡 <em>Examiner Tip:</em> Double your 3-second following gap to 6 seconds before braking for intersections.
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-[10px] text-zinc-500">
+                Unlock dynamic physics braking curve HUD with PRO.
+              </span>
+              <button
+                onClick={() => onOpenPaywall && onOpenPaywall('weather')}
+                className="text-[10px] font-bold text-blue-600 hover:underline flex items-center gap-1"
+              >
+                <Lock className="w-2.5 h-2.5" /> Unlock HUD
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -304,13 +374,15 @@ export default function LearnerModePanel({
               </span>
             </div>
 
-            {zones.map((zone) => {
+            {zones.map((zone, idx) => {
               const isSelected = selectedLearnerZone?.id === zone.id;
+              const isLocked = !canAccessZone(idx, isPro);
+
               return (
                 <div
                   key={zone.id}
-                  onClick={() => onSelectZone(zone)}
-                  className={`p-3 rounded-2xl border transition-all cursor-pointer ${
+                  onClick={() => handleZoneClick(zone, idx)}
+                  className={`p-3 rounded-2xl border transition-all cursor-pointer relative ${
                     isSelected
                       ? 'bg-emerald-500/10 border-emerald-500/50 shadow-sm'
                       : 'bg-white/60 dark:bg-zinc-800/60 hover:bg-white dark:hover:bg-zinc-800 border-black/5 dark:border-white/5'
@@ -322,15 +394,30 @@ export default function LearnerModePanel({
                         {zone.type === 'open_ground' ? '🏞️' : zone.type === 'parking_lot' ? '🅿️' : '🛣️'}
                       </div>
                       <div>
-                        <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                        <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
                           {zone.name}
+                          {isLocked && (
+                            <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.2 bg-amber-500/20 text-amber-600 rounded">
+                              PRO
+                            </span>
+                          )}
                         </h4>
                         <p className="text-xs text-zinc-400 line-clamp-1">{zone.subtitle}</p>
                       </div>
                     </div>
-                    <span className="text-xs font-black text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full shrink-0">
-                      {zone.dynamicScore}%
-                    </span>
+
+                    <div className="text-right">
+                      {isLocked ? (
+                        <div className="flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                          <Lock className="w-3 h-3" />
+                          <span>Unlock</span>
+                        </div>
+                      ) : (
+                        <span className="text-xs font-black text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full shrink-0">
+                          {zone.dynamicScore}%
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-3 mt-2 text-[11px] text-zinc-500 dark:text-zinc-400">
@@ -342,6 +429,13 @@ export default function LearnerModePanel({
                       {zone.isCurrentlyIdealTime ? '🟢 Low Traffic' : '🟡 Moderate'}
                     </span>
                   </div>
+
+                  {isLocked && (
+                    <div className="mt-2 pt-1.5 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] text-amber-600">
+                      <span>🔒 Unlock all 5 km practice grounds with PRO</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -360,6 +454,8 @@ export default function LearnerModePanel({
           isDroppingCustomCone={isDroppingCustomCone}
           setIsDroppingCustomCone={setIsDroppingCustomCone}
           selectedGroundCoord={activeZone ? activeZone.coordinates : userLocation}
+          isPro={isPro}
+          onOpenPaywall={onOpenPaywall}
         />
       )}
 
@@ -369,6 +465,8 @@ export default function LearnerModePanel({
           selectedDmvRoute={selectedDmvRoute}
           setSelectedDmvRoute={setSelectedDmvRoute}
           onStartDmvTestDrive={onStartDmvTestDrive}
+          isPro={isPro}
+          onOpenPaywall={onOpenPaywall}
         />
       )}
 
@@ -378,152 +476,104 @@ export default function LearnerModePanel({
           <div className="p-3 bg-white/70 dark:bg-zinc-800/70 rounded-2xl border border-black/5 dark:border-white/5 space-y-2">
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-[10px] font-bold text-zinc-400 uppercase">Target Ground</span>
-                <h4 className="text-sm font-black text-zinc-900 dark:text-zinc-100">{baseEvaluation.zoneName}</h4>
+                <span className="text-xs font-bold text-zinc-500">Pipeline Ground</span>
+                <h4 className="text-sm font-black text-zinc-900 dark:text-zinc-100">{activeZone.name}</h4>
               </div>
               <div className="text-right">
-                <span className={`text-base font-black ${baseEvaluation.isApproved ? 'text-emerald-600' : 'text-amber-500'}`}>
-                  {weatherAdjustment ? weatherAdjustment.adjustedScore : baseEvaluation.finalScore}%
-                </span>
-                <span className="block text-[9px] font-bold text-zinc-400">
-                  {baseEvaluation.isApproved ? 'APPROVED' : 'RESTRICTED'}
-                </span>
+                <span className="text-lg font-black text-emerald-600">{baseEvaluation.finalScore}%</span>
+                <span className="text-[10px] text-zinc-400 block font-bold">5-Stage Score</span>
               </div>
             </div>
 
-            {/* Time Simulator Slider */}
-            <div className="pt-2 border-t border-black/5 dark:border-white/5 space-y-1.5">
-              <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1 font-semibold text-zinc-600 dark:text-zinc-300">
-                  <Clock className="w-3.5 h-3.5 text-apple-blue" />
-                  Time Simulator: <span className="font-bold text-apple-blue">{simulatedHour}:00</span>
-                </span>
-                <button
-                  onClick={() => setIsWeekendSim(!isWeekendSim)}
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition-colors ${
-                    isWeekendSim
-                      ? 'bg-apple-blue text-white border-apple-blue'
-                      : 'bg-black/5 dark:bg-white/10 text-zinc-600 border-transparent'
-                  }`}
-                >
-                  {isWeekendSim ? 'Weekend (Empty Lots)' : 'Weekday'}
-                </button>
-              </div>
-
-              <input
-                type="range"
-                min="0"
-                max="23"
-                value={simulatedHour}
-                onChange={(e) => setSimulatedHour(parseInt(e.target.value))}
-                className="w-full h-1.5 bg-black/10 dark:bg-white/15 rounded-lg appearance-none cursor-pointer accent-emerald-500"
-              />
-            </div>
-          </div>
-
-          {/* 5-Stage Step Breakdown Cards */}
-          <div className="space-y-2">
-            {baseEvaluation.stages.map((st, i) => (
-              <div
-                key={i}
-                className="p-3 bg-white/60 dark:bg-zinc-800/60 rounded-2xl border border-black/5 dark:border-white/5 space-y-1 text-xs"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
-                    {st.status === 'PASS' ? (
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                    ) : (
-                      <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-                    )}
-                    {st.name}
+            {/* Stages Breakdown */}
+            <div className="space-y-1.5 pt-1 text-xs">
+              {baseEvaluation.stages.map((stg) => (
+                <div key={stg.id} className="p-2 rounded-xl bg-black/5 dark:bg-white/5 flex items-center justify-between">
+                  <div>
+                    <span className="font-bold block text-zinc-800 dark:text-zinc-200">{stg.name}</span>
+                    <span className="text-[10px] text-zinc-400">{stg.status}</span>
                   </div>
-                  <span className="font-black text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full text-[11px]">
-                    {st.score} / 100
-                  </span>
+                  <span className="font-mono font-bold text-emerald-600">+{stg.score}</span>
                 </div>
-                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 pl-5 leading-relaxed">
-                  {st.details}
-                </p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       )}
 
-      {/* TAB 5: CROWDSOURCED COMMUNITY STATUS */}
-      {activeTab === 'community' && activeZone && (
+      {/* TAB 5: COMMUNITY NOTES & REPORTS */}
+      {activeTab === 'community' && (
         <div className="space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <span className="text-xs font-bold text-zinc-600 dark:text-zinc-300">
-              Community Reports for {activeZone.name}
-            </span>
-          </div>
+          <div className="p-3 bg-white/70 dark:bg-zinc-800/70 rounded-2xl border border-black/5 dark:border-white/5 space-y-2">
+            <h4 className="text-xs font-black uppercase text-zinc-500 tracking-wider">
+              Community Ground Status ({activeZone?.name || 'Local Ground'})
+            </h4>
 
-          {/* Submit New Report Form */}
-          <div className="p-3 bg-white/70 dark:bg-zinc-800/70 rounded-2xl border border-black/5 dark:border-white/5 space-y-2 text-xs">
-            <span className="font-bold text-zinc-900 dark:text-zinc-100 block">
-              + Post Live Ground Update
-            </span>
-            <div className="flex items-center gap-2">
-              <select
-                value={newGateStatus}
-                onChange={(e) => setNewGateStatus(e.target.value)}
-                className="bg-black/5 dark:bg-white/10 rounded-lg p-1.5 text-[11px] font-semibold text-zinc-700 dark:text-zinc-300"
-              >
-                <option value="Open">Gate: Open</option>
-                <option value="Locked">Gate: Locked</option>
-                <option value="Security Present">Security Present</option>
-              </select>
+            {/* Input Form */}
+            <div className="space-y-2 pt-1">
               <input
                 type="text"
                 value={newReportText}
                 onChange={(e) => setNewReportText(e.target.value)}
-                placeholder="e.g. Cones allowed, empty until 6 PM..."
-                className="flex-1 bg-black/5 dark:bg-white/10 rounded-lg px-2.5 py-1.5 text-xs text-zinc-900 dark:text-zinc-100 outline-none"
+                placeholder="Share gate status, security, or lot conditions..."
+                className="w-full px-3 py-2 text-xs rounded-xl border border-black/10 dark:border-white/10 bg-white/80 dark:bg-zinc-900/80 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
-              <button
-                onClick={handleAddCommunityReport}
-                className="p-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors"
-              >
-                <Send className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
+              <div className="flex items-center justify-between gap-2">
+                <select
+                  value={newGateStatus}
+                  onChange={(e) => setNewGateStatus(e.target.value)}
+                  className="px-2 py-1.5 text-xs rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-zinc-800"
+                >
+                  <option value="Open">Gate Open</option>
+                  <option value="Unlocked">Unlocked Barrier</option>
+                  <option value="Security Active">Security Patrol</option>
+                  <option value="Closed">Closed Gate</option>
+                </select>
 
-          {/* List of Existing Reports */}
-          <div className="space-y-2">
-            {currentZoneReports.map((rep) => (
-              <div
-                key={rep.id}
-                className="p-3 bg-white/60 dark:bg-zinc-800/60 rounded-2xl border border-black/5 dark:border-white/5 space-y-1.5 text-xs"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-zinc-800 dark:text-zinc-200">{rep.author}</span>
-                  <span className="text-[10px] text-zinc-400">{rep.timeAgo}</span>
-                </div>
-                <div className="flex items-center gap-2 text-[10px] font-bold">
-                  <span className="bg-emerald-500/15 text-emerald-600 px-2 py-0.5 rounded-full">
-                    {rep.gateStatus}
-                  </span>
-                  <span className="bg-blue-500/15 text-apple-blue px-2 py-0.5 rounded-full">
-                    {rep.surfaceCondition}
-                  </span>
-                </div>
-                <p className="text-[11px] text-zinc-600 dark:text-zinc-300 leading-relaxed pt-0.5">
-                  "{rep.comment}"
-                </p>
+                <button
+                  onClick={handleAddCommunityReport}
+                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-sm flex items-center gap-1"
+                >
+                  <Send className="w-3 h-3" />
+                  <span>Post Report</span>
+                </button>
               </div>
-            ))}
+            </div>
+
+            {/* Existing Reports */}
+            <div className="space-y-2 pt-2 divide-y divide-black/5 dark:divide-white/5">
+              {currentZoneReports.length === 0 ? (
+                <p className="text-xs text-zinc-400 py-2">No community notes for this ground yet. Be the first to report!</p>
+              ) : (
+                currentZoneReports.map((rep) => (
+                  <div key={rep.id} className="pt-2 text-xs space-y-1">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="font-bold text-zinc-800 dark:text-zinc-200">{rep.author}</span>
+                      <span className="text-zinc-400 text-[10px]">{rep.timeAgo}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-[10px]">
+                      <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 font-bold">
+                        {rep.status || rep.gateStatus}
+                      </span>
+                      <span className="text-zinc-400">{rep.surface || rep.surfaceCondition}</span>
+                    </div>
+                    <p className="text-zinc-600 dark:text-zinc-300 text-[11px]">{rep.notes || rep.comment}</p>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       )}
 
-      {/* Driver Passport Logbook Modal */}
+      {/* Learner Passport Modal */}
       <LearnerPassportModal
         isOpen={isPassportOpen}
         onClose={() => setIsPassportOpen(false)}
         loggedHours={loggedHours}
         onAddPracticeHour={onAddPracticeHour}
+        isPro={isPro}
+        onOpenPaywall={onOpenPaywall}
       />
     </div>
   );

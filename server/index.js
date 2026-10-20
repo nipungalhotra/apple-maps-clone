@@ -21,8 +21,18 @@ if (!fs.existsSync(STORAGE_DIR)) {
 
 const REPORTS_FILE = path.join(STORAGE_DIR, 'reports.json');
 const PASSPORT_FILE = path.join(STORAGE_DIR, 'passport.json');
+const SUBSCRIPTION_FILE = path.join(STORAGE_DIR, 'subscriptions.json');
 
 // Initialize files if not present
+if (!fs.existsSync(SUBSCRIPTION_FILE)) {
+  const initialSubscription = {
+    isPro: false,
+    tier: 'free',
+    unlockedAt: null,
+    expiresAt: null
+  };
+  fs.writeFileSync(SUBSCRIPTION_FILE, JSON.stringify(initialSubscription, null, 2));
+}
 if (!fs.existsSync(REPORTS_FILE)) {
   const initialReports = {
     'candlestick-open-ground': [
@@ -263,6 +273,52 @@ app.post('/api/passport/log', (req, res) => {
     res.json({ success: true, passport });
   } catch (err) {
     res.status(500).json({ error: 'Failed to update passport', details: err.message });
+  }
+});
+
+// 7. Subscription: Get current subscription status
+app.get('/api/subscription', (req, res) => {
+  try {
+    const raw = fs.readFileSync(SUBSCRIPTION_FILE, 'utf-8');
+    res.json(JSON.parse(raw));
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to read subscription', details: err.message });
+  }
+});
+
+// 8. Subscription: Upgrade to Pro (Simulated payment checkout)
+app.post('/api/subscription/upgrade', (req, res) => {
+  try {
+    const { tier = 'lifetime', price = 29.99 } = req.body;
+    const now = new Date();
+    const updated = {
+      isPro: true,
+      tier,
+      price,
+      unlockedAt: now.toISOString(),
+      expiresAt: tier === 'monthly' ? new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString() : null,
+      transactionId: `TXN-MAPS-${Date.now()}`
+    };
+    fs.writeFileSync(SUBSCRIPTION_FILE, JSON.stringify(updated, null, 2));
+    res.json({ success: true, subscription: updated });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to upgrade subscription', details: err.message });
+  }
+});
+
+// 9. Subscription: Reset to Free (for testing)
+app.post('/api/subscription/reset', (req, res) => {
+  try {
+    const reset = {
+      isPro: false,
+      tier: 'free',
+      unlockedAt: null,
+      expiresAt: null
+    };
+    fs.writeFileSync(SUBSCRIPTION_FILE, JSON.stringify(reset, null, 2));
+    res.json({ success: true, subscription: reset });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to reset subscription', details: err.message });
   }
 });
 
