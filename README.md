@@ -4,6 +4,43 @@ A high-fidelity navigation and driver education platform featuring the **RoadRea
 
 ---
 
+## 🗺️ How RoadReady Works (Visual Workflow)
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        ROADREADY VISUAL WORKFLOW                       │
+├──────────────────┬──────────────────┬──────────────────┬───────────────┤
+│ 1. FreeSpace     │ 2. Virtual Cones │ 3. DMV Simulator │ 4. Logbook    │
+│    Empty Lots    │    Parallel Bay  │    Examiner Audio│    50-Hour PDF│
+└──────────────────┴──────────────────┴──────────────────┴───────────────┘
+
+1. 🏞️ DISCOVER EMPTY GROUNDS:
+   [ User GPS ] ──────► Scans 5 km radius ──► [ Candlestick Civic Lot ]
+                                              • 65m wide open pavement
+                                              • 0.1 cars/min low traffic
+                                              • Gate status: Open
+
+2. ▲ PRACTICE WITH VIRTUAL CONES:
+   [ Map View ] ──────► Drops Cones ────────►   ▲   [ Your Car ]   ▲
+                                              • Parallel Parking Bay
+                                              • 90° Reverse Docking
+                                              • Motorcycle MSF U-Turn Box
+
+3. 🎖️ DRIVE OFFICIAL DMV EXAM ROUTES:
+   [ Local DMV ] ─────► Real Test Path ─────► Examiner Voice Audio (Siri)
+                                              • 4-Way intersection scan
+                                              • Curb park alignment
+                                              • Score: 90/100 PASSED
+
+4. 📄 EXPORT OFFICIAL 50-HR DRIVING LOG:
+   [ 50 Hours Met ] ──► Instant Export ─────► State Form DL-50HRS (PDF)
+                                              • 40h Day + 10h Night tally
+                                              • Supervisor Affidavit
+                                              • Ready for DMV Examiner
+```
+
+---
+
 ## 🚀 Live Demo
 Run locally at:
 **[http://127.0.0.1:3000/](http://127.0.0.1:3000/)**

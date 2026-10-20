@@ -1,5 +1,5 @@
 import React from 'react';
-import { Monitor, Smartphone, Maximize2, Sun, Moon, Layers, Locate, Car, Zap } from 'lucide-react';
+import { Monitor, Smartphone, Maximize2, Sun, Moon, Layers, Locate, Car, Zap, HelpCircle } from 'lucide-react';
 
 export default function DeviceModeBar({
   viewMode,
@@ -12,7 +12,8 @@ export default function DeviceModeBar({
   showTraffic = false,
   setShowTraffic = () => {},
   isPro = false,
-  onOpenPaywall = () => {}
+  onOpenPaywall = () => {},
+  onOpenGuide = () => {}
 }) {
   return (
     <div className="absolute top-4 right-4 z-30 flex flex-col items-end gap-2">
@@ -123,6 +124,16 @@ export default function DeviceModeBar({
             className="p-1.5 rounded-full text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 transition-colors"
           >
             {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
+          </button>
+
+          {/* Visual Onboarding Guide Button */}
+          <button
+            onClick={onOpenGuide}
+            title="How RoadReady Works (Visual Guide)"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+          >
+            <HelpCircle className="w-3.5 h-3.5 text-emerald-500" />
+            <span className="hidden lg:inline text-[11px]">How it Works</span>
           </button>
         </div>
       </div>

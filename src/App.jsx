@@ -5,6 +5,7 @@ import MobileBottomSheet from './components/MobileBottomSheet';
 import NavigationHUD from './components/NavigationHUD';
 import DeviceModeBar from './components/DeviceModeBar';
 import LearnerProPaywallModal from './components/LearnerProPaywallModal';
+import OnboardingGuideModal from './components/OnboardingGuideModal';
 import { PRESET_PLACES } from './data/presetPlaces';
 import { LEARNER_ZONES } from './data/learnerZones';
 import { CONE_PRESETS } from './data/conePresets';
@@ -61,6 +62,19 @@ export default function App() {
   const isPro = subState.isPro;
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
   const [paywallFeature, setPaywallFeature] = useState(null);
+
+  // First-Time Visitor Visual Onboarding Guide State
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      const shown = localStorage.getItem('roadready_guide_shown');
+      if (!shown) {
+        setIsOnboardingOpen(true);
+        localStorage.setItem('roadready_guide_shown', 'true');
+      }
+    } catch {}
+  }, []);
 
   const handleOpenPaywall = (feature = null) => {
     setPaywallFeature(feature);
@@ -319,6 +333,7 @@ export default function App() {
         setShowTraffic={setShowTraffic}
         isPro={isPro}
         onOpenPaywall={handleOpenPaywall}
+        onOpenGuide={() => setIsOnboardingOpen(true)}
       />
 
       {/* NAVIGATION ACTIVE HUD */}
@@ -469,6 +484,12 @@ export default function App() {
         isPro={isPro}
         onSubscriptionChange={handleSubscriptionChange}
         highlightFeature={paywallFeature}
+      />
+
+      {/* Visual Onboarding & How-It-Works Guide Modal */}
+      <OnboardingGuideModal
+        isOpen={isOnboardingOpen}
+        onClose={() => setIsOnboardingOpen(false)}
       />
     </div>
   );
