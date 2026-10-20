@@ -1,116 +1,104 @@
-# RoadReady: Safe Driving Grounds & DMV Test Prep Engine
+<div align="center">
+  <img src="docs/assets/logo.svg" width="128" height="128" alt="RoadReady Logo" />
+  <h1>RoadReady</h1>
+  <p><strong>Safe Driving Grounds & DMV Road Test Preparation Platform</strong></p>
+  <p>Dual-Mode Experience: macOS Desktop Floating Interface & iOS Native Mobile Layout</p>
 
-A high-fidelity navigation and driver education platform featuring the **RoadReady FreeSpace Engine** — discovering empty parking lots, quiet practice boulevards, virtual cone courses, official DMV examiner route simulations, and 1-on-1 driving coach marketplace.
-
----
-
-## 🗺️ How RoadReady Works (Visual Workflow)
-
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                        ROADREADY VISUAL WORKFLOW                       │
-├──────────────────┬──────────────────┬──────────────────┬───────────────┤
-│ 1. FreeSpace     │ 2. Virtual Cones │ 3. DMV Simulator │ 4. Logbook    │
-│    Empty Lots    │    Parallel Bay  │    Examiner Audio│    50-Hour PDF│
-└──────────────────┴──────────────────┴──────────────────┴───────────────┘
-
-1. 🏞️ DISCOVER EMPTY GROUNDS:
-   [ User GPS ] ──────► Scans 5 km radius ──► [ Candlestick Civic Lot ]
-                                              • 65m wide open pavement
-                                              • 0.1 cars/min low traffic
-                                              • Gate status: Open
-
-2. ▲ PRACTICE WITH VIRTUAL CONES:
-   [ Map View ] ──────► Drops Cones ────────►   ▲   [ Your Car ]   ▲
-                                              • Parallel Parking Bay
-                                              • 90° Reverse Docking
-                                              • Motorcycle MSF U-Turn Box
-
-3. 🎖️ DRIVE OFFICIAL DMV EXAM ROUTES:
-   [ Local DMV ] ─────► Real Test Path ─────► Examiner Voice Audio (Siri)
-                                              • 4-Way intersection scan
-                                              • Curb park alignment
-                                              • Score: 90/100 PASSED
-
-4. 📄 EXPORT OFFICIAL 50-HR DRIVING LOG:
-   [ 50 Hours Met ] ──► Instant Export ─────► State Form DL-50HRS (PDF)
-                                              • 40h Day + 10h Night tally
-                                              • Supervisor Affidavit
-                                              • Ready for DMV Examiner
-```
+  <p>
+    <a href="#-quick-start">Quick Start</a> •
+    <a href="#-key-features">Features</a> •
+    <a href="#-tech-stack">Tech Stack</a> •
+    <a href="#-mobile-support">iOS & Android</a>
+  </p>
+</div>
 
 ---
 
-## 🚀 Live Demo
-Run locally at:
-**[http://127.0.0.1:3000/](http://127.0.0.1:3000/)**
+<div align="center">
+  <img src="docs/assets/app-preview.svg" width="100%" alt="RoadReady Interface - macOS Desktop and iOS Mobile Simulator" />
+</div>
 
 ---
 
-## ✨ Features
+## 🌟 Overview
 
-### 🖥️ Desktop UI/UX (macOS Experience)
-- **Floating Glass Island:** Translucent frosted blur (`backdrop-blur-xl`), rounded Apple corners, and soft card drop shadows.
-- **Search & Auto-Complete:** Instant suggestions, GPS Current Location quick-action, and OpenStreetMap Photon geocoding.
-- **Category Filter Pills:** Food & Drink, Fuel / EV charging, Shopping, Parking, Transit.
-- **Place Details Card:** Photos, star ratings, operating hours, phone, web links, and directions.
-- **Multi-Modal Route Planner:** Drive (`car`), Walk (`foot`), and Cycle (`bike`).
-- **Turn-by-Turn Maneuvers Preview:** Step-by-step route directions list with distance formatting.
+**RoadReady** is a modern navigation and driver education platform built to eliminate the fear, anxiety, and expense of learning how to drive. It bridges the gap between first-time ignition and passing the official road test by locating quiet practice grounds, placing virtual cones on pavement, and rehearsing official examiner routes.
 
-### 📱 Mobile UI/UX (iOS Experience)
-- **Interactive 3-Tier Bottom Sheet:**
-  - `Peek` (compact search pill)
-  - `Half` (search results & category discovery)
-  - `Full` (complete place card details or turn instructions)
-- **Touch & Drag Ergonomics:** Draggable notch handle and smooth spring transitions.
-- **iPhone 16 Pro Frame Simulator:** Built-in mobile frame with Dynamic Island, Status Bar, and Home Indicator.
+---
 
-### 🔰 Learner FreeSpace Engine (For Cars & Bikes)
-- **Dynamic Local Proximity Discovery:** Automatically discovers 5 verified beginner practice grounds and quiet road loops within 5 km of the user's active GPS location anywhere in the world.
-- **5-Stage Mathematical Safety Pipeline:**
-  1. *Spatial Geometry & Boundary* (turning clearance, run-off buffer width).
-  2. *Road Hierarchy & Speed Ceiling* (15 mph quiet roads, zero-conflict open tarmac).
-  3. *Temporal Traffic Activity Matrix* (time-of-day traffic modeling).
-  4. *Surface Friction & Run-Off Buffer* (asphalt/concrete traction rating).
-  5. *Vehicle Kinematics & Maneuver Suitability* (clutch friction zone, figure-8 balance, 3-point turns).
-- **Virtual Traffic Cone Course Builder:**
-  - Presets: Slalom Cone Weaving, Parallel Parking Bay, Motorcycle Figure-8, 3-Point Turn Box.
-  - Interactive custom cone dropping anywhere on the map.
-- **Siri Voice Guidance:** Live spoken maneuvers and feedback via Web Speech API (`speechSynthesis`).
-- **Official DMV Driving Test Simulator:** SF Fell St & Daly City DMV official routes with 5 examiner evaluation checkpoints.
-- **Live Weather Traction Engine:** Real-time wet asphalt braking distance multipliers (1.4x-2.2x stopping distance alert).
-- **Community Ground Reports:** Crowd-sourced pavement status, open gates, and crowd activity notes.
-- **Learner Passport & Logged Hours Tracker:** 50-hour state requirement tracker with milestone achievement badge unlocks.
+## ✨ Key Features
 
-### 🧭 Navigation & Map Engine
-- **Turn-by-Turn Navigation HUD:** High-contrast green iOS banner, maneuver icons, and remaining distance/ETA.
-- **Simulated GPS Drive Replay (`.navtrace`):** Live route playback driving the camera with speed controls (`1x`, `2x`, `4x`).
-- **3D Buildings & Tilt:** Smooth perspective tilt with 3D building extrusions.
-- **Dark / Light Theme:** Dynamic theme switcher.
+### 🖥️ Cupertino-Grade Dual Interface
+- **macOS Floating Glass Island:** Translucent frosted materials (`backdrop-blur-xl`), smooth spring physics, and Apple card elevation.
+- **iOS 3-Tier Gesture Bottom Sheet:** Interactive Peek, Half, and Full drag states with native rubber-banding.
+- **iPhone 16 Pro Frame Simulator:** Built-in mobile chassis with Dynamic Island, Status Bar, and Home Indicator.
+
+### 🔰 Safe Practice Grounds & Navigation
+- **Local Practice Ground Discovery:** Dynamically locates spacious parking lots and low-traffic practice routes within 5 km of any GPS coordinate.
+- **Virtual Traffic Cone Courses:** Drop parallel parking bays, reverse 90° docking, and slalom drills onto open pavement with zero risk to vehicles.
+- **Live Traffic Facility:** Real-time congestion vectors and flow rate status.
+- **Dynamic Weather Braking:** Real-time wet asphalt stopping distance telemetry and safety alerts.
+
+### 🎖️ DMV Road Test Simulator
+- **Official Examiner Routes:** Turn-by-turn navigation along official DMV test paths.
+- **Siri Voice Guidance:** Live spoken examiner instructions and evaluation checkpoints.
+- **Road Test Scoring:** Live point-deduction tracking against state passing thresholds.
+
+### 📄 Certified 50-Hour Driving Log (PDF)
+- **State Form DL-50HRS Compliant:** Tracks mandatory daytime (40h) and nighttime (10h) practice hours.
+- **Printable Export:** 1-tap print and PDF export with supervising driver affidavits and DMV examiner verification stamp box.
+
+### 👨‍🏫 1-on-1 Driving Coach Marketplace
+- **Verified Local Instructors:** Connect with certified behind-the-wheel instructors providing dual-control vehicles.
+- **3-Step In-App Booking:** Package selection, practice ground meeting location, and instant confirmation voucher.
 
 ---
 
 ## 🛠️ Tech Stack
-- **Framework:** React 18, Vite 6
-- **Styling:** Tailwind CSS, Lucide React
-- **Map Engine:** MapLibre GL
-- **Audio / Voice:** Web Speech API
+
+- **Frontend:** React 18, Vite 6, Tailwind CSS
+- **Map & Spatial Rendering:** MapLibre GL 5 (3D building extrusions & vector layers)
+- **Icons:** Lucide React
+- **Voice Synthesis:** Web Speech API (`speechSynthesis`)
+- **Backend API:** Node.js, Express 5, CORS, File Persistence
+- **Native Mobile:** Capacitor 8 (Android & iOS native projects)
 
 ---
 
-## 📦 Getting Started
+## 📱 Mobile Support
+
+RoadReady includes native container projects for both iOS and Android powered by Capacitor 8:
 
 ```bash
-# Clone the repository
+# Sync web build to native shells
+npm run cap:build
+
+# Open in Android Studio
+npx cap open android
+
+# Open in Xcode (macOS)
+npx cap open ios
+```
+
+---
+
+## 🚀 Quick Start
+
+```bash
+# 1. Clone repository
 git clone https://github.com/nipungalhotra/apple-maps-clone.git
 cd apple-maps-clone
 
-# Install dependencies
+# 2. Install dependencies
 npm install
 
-# Start Vite dev server
-npm run dev
-
-# Build for production
-npm run build
+# 3. Start Frontend & Backend
+npm run dev      # Runs Vite on http://127.0.0.1:3000
+npm run server   # Runs API on http://127.0.0.1:3001
 ```
+
+---
+
+<div align="center">
+  <sub>Built with precision and care for the next generation of safe, confident drivers.</sub>
+</div>

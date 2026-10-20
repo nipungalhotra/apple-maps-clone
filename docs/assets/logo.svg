@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0A84FF"/>
+      <stop offset="50%" stop-color="#0062D2"/>
+      <stop offset="100%" stop-color="#0040A8"/>
+    </linearGradient>
+    <linearGradient id="roadGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#334155"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34C759"/>
+      <stop offset="100%" stop-color="#30D158"/>
+    </linearGradient>
+    <filter id="dropShadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="16" stdDeviation="20" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- iOS App Icon Squircle Background -->
+  <rect width="512" height="512" rx="115" fill="url(#bgGrad)"/>
+  
+  <!-- Subtle Map Grid Curves -->
+  <path d="M 0 180 Q 256 120 512 200" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="8"/>
+  <path d="M 0 340 Q 256 260 512 360" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="8"/>
+
+  <!-- Open Highway / Road Horizon Shape -->
+  <path d="M 120 450 L 230 180 L 282 180 L 392 450 Z" fill="url(#roadGrad)" filter="url(#dropShadow)"/>
+  
+  <!-- Dashed Center Road Stripe -->
+  <line x1="256" y1="200" x2="256" y2="230" stroke="#FFCC00" stroke-width="8" stroke-linecap="round"/>
+  <line x1="256" y1="260" x2="256" y2="300" stroke="#FFCC00" stroke-width="10" stroke-linecap="round"/>
+  <line x1="256" y1="335" x2="256" y2="390" stroke="#FFCC00" stroke-width="12" stroke-linecap="round"/>
+  <line x1="256" y1="425" x2="256" y2="450" stroke="#FFCC00" stroke-width="14" stroke-linecap="round"/>
+
+  <!-- Road Curb Borders -->
+  <line x1="120" y1="450" x2="230" y2="180" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" opacity="0.9"/>
+  <line x1="392" y1="450" x2="282" y2="180" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" opacity="0.9"/>
+
+  <!-- Destination Beacon Pin Pinpoint -->
+  <g transform="translate(256, 150)">
+    <circle cx="0" cy="0" r="32" fill="#FF3B30" filter="url(#dropShadow)"/>
+    <circle cx="0" cy="0" r="14" fill="#FFFFFF"/>
+    <!-- Small Learner L or Checkmark Badge -->
+    <path d="M -4 -8 L -4 6 L 5 6" fill="none" stroke="#FF3B30" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Green Learner Shield Badge (Bottom Right Accent) -->
+  <g transform="translate(365, 365)" filter="url(#dropShadow)">
+    <rect width="90" height="90" rx="24" fill="url(#accentGrad)" stroke="#FFFFFF" stroke-width="4"/>
+    <text x="45" y="58" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="44" font-weight="900" fill="#FFFFFF" text-anchor="middle">L</text>
+  </g>
+</svg>

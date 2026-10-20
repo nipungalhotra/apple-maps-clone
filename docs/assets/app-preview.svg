@@ -1,0 +1,175 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="mapBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="20" stdDeviation="25" flood-opacity="0.5" flood-color="#000000"/>
+    </filter>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="1200" height="675" fill="url(#bg)"/>
+
+  <!-- Subtle Radial Glow -->
+  <circle cx="600" cy="300" r="400" fill="#0A84FF" opacity="0.08"/>
+
+  <!-- MAIN APP WINDOW (Desktop Frame) -->
+  <g transform="translate(60, 45)" filter="url(#shadow)">
+    <!-- Window Border & Body -->
+    <rect width="780" height="540" rx="16" fill="#18181B" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
+
+    <!-- macOS Window Chrome Title Bar -->
+    <rect width="780" height="38" rx="16" fill="#27272A"/>
+    <rect y="26" width="780" height="12" fill="#27272A"/>
+    
+    <!-- Traffic Light Buttons -->
+    <circle cx="22" cy="19" r="6" fill="#FF5F56"/>
+    <circle cx="42" cy="19" r="6" fill="#FFBD2E"/>
+    <circle cx="62" cy="19" r="6" fill="#27C93F"/>
+
+    <!-- Window Title -->
+    <text x="390" y="24" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="12" font-weight="600" fill="#A1A1AA" text-anchor="middle">RoadReady — Driving Practice Map</text>
+
+    <!-- Map Viewport -->
+    <g transform="translate(0, 38)">
+      <rect width="780" height="502" fill="url(#mapBg)"/>
+      
+      <!-- Simulated 3D Map Road Geometry -->
+      <path d="M 0 350 Q 200 320 400 340 T 780 320" fill="none" stroke="#334155" stroke-width="32"/>
+      <path d="M 300 0 L 320 502" fill="none" stroke="#334155" stroke-width="26"/>
+      <path d="M 540 0 L 520 502" fill="none" stroke="#334155" stroke-width="22"/>
+
+      <!-- Safe Practice Zone Polygon -->
+      <polygon points="360,180 580,160 620,310 380,320" fill="#34C759" fill-opacity="0.22" stroke="#34C759" stroke-width="3" stroke-dasharray="6,4"/>
+      
+      <!-- Safe Zone Label -->
+      <rect x="420" y="220" width="140" height="26" rx="13" fill="#34C759"/>
+      <text x="490" y="237" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11" font-weight="800" fill="#FFFFFF" text-anchor="middle">🟢 Candlestick Civic Lot</text>
+
+      <!-- Virtual Orange Cones on the Ground -->
+      <g transform="translate(450, 270)">
+        <polygon points="0,0 8,-16 -8,-16" fill="#FF9500"/>
+        <polygon points="25,0 33,-16 17,-16" fill="#FF9500"/>
+        <polygon points="50,0 58,-16 42,-16" fill="#FF9500"/>
+        <polygon points="75,0 83,-16 67,-16" fill="#FF9500"/>
+      </g>
+
+      <!-- Top Right Control Pills -->
+      <g transform="translate(480, 16)">
+        <rect width="90" height="30" rx="15" fill="#27272A" stroke="rgba(255,255,255,0.1)"/>
+        <text x="525" y="35" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="10" font-weight="700" fill="#34C759" text-anchor="middle">● Traffic Live</text>
+
+        <rect x="100" width="80" height="30" rx="15" fill="#FF9500"/>
+        <text x="140" y="35" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="10" font-weight="800" fill="#FFFFFF" text-anchor="middle">PRO PASS 👑</text>
+
+        <rect x="190" width="40" height="30" rx="15" fill="#27272A" stroke="rgba(255,255,255,0.1)"/>
+        <text x="210" y="35" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11" font-weight="700" fill="#A1A1AA" text-anchor="middle">3D</text>
+      </g>
+
+      <!-- Translucent macOS Floating Sidebar Card -->
+      <g transform="translate(16, 16)" filter="url(#shadow)">
+        <rect width="250" height="470" rx="16" fill="#18181B" fill-opacity="0.88" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+        
+        <!-- Search bar -->
+        <rect x="12" y="14" width="226" height="32" rx="10" fill="#27272A"/>
+        <text x="28" y="34" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11" fill="#71717A">🔍 Search RoadReady</text>
+
+        <!-- Mode Toggle -->
+        <g transform="translate(12, 54)">
+          <rect width="110" height="28" rx="8" fill="#27272A"/>
+          <text x="55" y="72" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="10" font-weight="600" fill="#A1A1AA" text-anchor="middle">Explore</text>
+
+          <rect x="116" width="110" height="28" rx="8" fill="#34C759"/>
+          <text x="171" y="72" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="10" font-weight="800" fill="#FFFFFF" text-anchor="middle">RoadReady 🔰</text>
+        </g>
+
+        <!-- Selected Ground Info -->
+        <g transform="translate(12, 94)">
+          <rect width="226" height="150" rx="12" fill="#27272A" fill-opacity="0.6"/>
+          <text x="12" y="24" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF">Candlestick Civic Lot</text>
+          <text x="12" y="40" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="10" fill="#A1A1AA">Wide Paved Bay • Low Conflict</text>
+
+          <text x="12" y="66" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="10" font-weight="700" fill="#34C759">Safety Score: 96%</text>
+          <text x="12" y="82" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="10" fill="#A1A1AA">Distance: 2.1 km away</text>
+          <text x="12" y="98" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="10" fill="#A1A1AA">Width: ~65 meters</text>
+
+          <!-- Buttons -->
+          <rect y="112" width="108" height="28" rx="8" fill="#FF9500"/>
+          <text x="54" y="130" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">▲ Place Cones</text>
+
+          <rect x="116" y="112" width="110" height="28" rx="8" fill="#0A84FF"/>
+          <text x="171" y="130" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">Navigate ↗</text>
+        </g>
+
+        <!-- 1-on-1 Coach Badge -->
+        <g transform="translate(12, 254)">
+          <rect width="226" height="60" rx="12" fill="#0A84FF" fill-opacity="0.15" stroke="#0A84FF" stroke-width="1"/>
+          <text x="12" y="22" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11" font-weight="700" fill="#FFFFFF">Coach Dave Miller (4.96★)</text>
+          <text x="12" y="38" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="9" fill="#93C5FD">Coaches at this ground • Dual-brake car</text>
+          <text x="12" y="52" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="9" font-weight="800" fill="#60A5FA">Book Lesson ($75/hr) →</text>
+        </g>
+
+        <!-- DMV Simulator Badge -->
+        <g transform="translate(12, 324)">
+          <rect width="226" height="64" rx="12" fill="#27272A"/>
+          <text x="12" y="22" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11" font-weight="700" fill="#FFFFFF">Official DMV Road Test</text>
+          <text x="12" y="38" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="9" fill="#A1A1AA">Daly City DMV Exam Route</text>
+          <text x="12" y="52" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="9" font-weight="700" fill="#34C759">Examiner Voice Audio Ready 🎙️</text>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <!-- MOBILE DEVICE (iPhone 16 Pro Mockup Frame on Right) -->
+  <g transform="translate(860, 50)" filter="url(#shadow)">
+    <!-- Phone Bezel -->
+    <rect width="270" height="530" rx="42" fill="#000000" stroke="#3F3F46" stroke-width="5"/>
+    <rect x="5" y="5" width="260" height="520" rx="38" fill="#18181B"/>
+
+    <!-- Dynamic Island -->
+    <rect x="95" y="14" width="80" height="20" rx="10" fill="#000000"/>
+
+    <!-- Mobile Map Viewport -->
+    <g transform="translate(10, 40)">
+      <rect width="250" height="475" rx="28" fill="url(#mapBg)"/>
+      <path d="M 0 200 Q 125 150 250 220" fill="none" stroke="#334155" stroke-width="24"/>
+      
+      <!-- Mobile Safe Zone Polygon -->
+      <polygon points="40,80 180,60 210,180 50,190" fill="#34C759" fill-opacity="0.3" stroke="#34C759" stroke-width="2"/>
+
+      <!-- Mobile Gesture Bottom Sheet -->
+      <g transform="translate(8, 230)" filter="url(#shadow)">
+        <rect width="234" height="235" rx="22" fill="#18181B" fill-opacity="0.95" stroke="rgba(255,255,255,0.15)"/>
+        <!-- Grabber Notch -->
+        <rect x="97" y="8" width="40" height="4" rx="2" fill="#71717A"/>
+
+        <!-- Header -->
+        <text x="16" y="36" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF">RoadReady Practice</text>
+        <text x="16" y="50" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="9" fill="#A1A1AA">5 Safe Grounds Near You</text>
+
+        <!-- Ground Item 1 -->
+        <rect x="12" y="60" width="210" height="46" rx="10" fill="#27272A"/>
+        <text x="24" y="80" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11" font-weight="700" fill="#FFFFFF">Candlestick Lot</text>
+        <text x="24" y="96" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="9" fill="#34C759">96% Safety • 2.1 km</text>
+
+        <!-- Ground Item 2 -->
+        <rect x="12" y="112" width="210" height="46" rx="10" fill="#27272A"/>
+        <text x="24" y="132" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11" font-weight="700" fill="#FFFFFF">Quiet Boulevard Loop</text>
+        <text x="24" y="148" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="9" fill="#34C759">91% Safety • 3.4 km</text>
+
+        <!-- DMV Certified PDF Action -->
+        <rect x="12" y="164" width="210" height="34" rx="10" fill="#0A84FF"/>
+        <text x="117" y="185" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="10" font-weight="800" fill="#FFFFFF" text-anchor="middle">📄 Export 50-Hr DMV Log (PDF)</text>
+      </g>
+    </g>
+
+    <!-- Home Indicator -->
+    <rect x="95" y="515" width="80" height="4" rx="2" fill="#FFFFFF" opacity="0.6"/>
+  </g>
+</svg>
