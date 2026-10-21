@@ -7,6 +7,7 @@
   <p>
     <a href="#-quick-start">Quick Start</a> •
     <a href="#-key-features">Features</a> •
+    <a href="#-market-validation">Market Validation</a> •
     <a href="#-tech-stack">Tech Stack</a> •
     <a href="#-mobile-support">iOS & Android</a>
   </p>
@@ -51,6 +52,24 @@
 ### 👨‍🏫 1-on-1 Driving Coach Marketplace
 - **Verified Local Instructors:** Connect with certified behind-the-wheel instructors providing dual-control vehicles.
 - **3-Step In-App Booking:** Package selection, practice ground meeting location, and instant confirmation voucher.
+
+---
+
+## 🔬 Market Validation via MiroFish Swarm Intelligence
+
+RoadReady's target market dynamics, multi-sided stakeholder incentives, and pricing models were forecasted and validated using **[MiroFish AI](https://github.com/666ghj/MiroFish)** — an open-source multi-agent simulation framework powered by LLM personas and Zep knowledge graphs.
+
+<div align="center">
+  <img src="docs/assets/mirofish-graph.svg" width="100%" alt="RoadReady MiroFish Knowledge Graph Topology" />
+</div>
+
+### 🔑 Simulation Highlights (Simulation ID: `sim_ca52b69d452b`)
+- **Dual-Feed Multi-Agent Swarm:** 72 simulated rounds yielding 86 organic social events across student drivers, supervising parents, certified driving schools, and DMV agencies.
+- **Ecosystem Equilibrium:** Professional driving instructors embrace RoadReady's 1-on-1 Coach Marketplace as a qualified student acquisition channel ($65–$85/hr dual-control lessons) rather than seeing the app as competition.
+- **Compliance Automation:** Parents rapidly adopt the digital 50-hour practice logbook to satisfy State Form DL-50HRS GDL requirements, eliminating supervisory anxiety and logbook falsification.
+- **Pricing Viability:** Strong willingness-to-pay identified for the **$29.99 Pro Pass** (unlimited 3D cone courses and certified PDF export) and sustainable marketplace take rates ($25–$35/booking).
+
+👉 **[Read the Full MiroFish Market Prediction Report & Analysis](docs/mirofish-simulation/MARKET_PREDICTION_REPORT.md)**
 
 ---
 
