@@ -18,6 +18,10 @@ The simulation reveals a **highly collaborative ecosystem equilibrium**:
 
 ## 🌐 MiroFish Knowledge Graph Topology
 
+<div align="center">
+  <img src="../assets/mirofish-graph.svg" width="100%" alt="MiroFish Knowledge Graph Topology" />
+</div>
+
 ```
              ┌─────────────────────────────────────────────────────────┐
              │               RoadReady TechPlatform                   │
