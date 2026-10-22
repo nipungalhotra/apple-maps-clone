@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import AppleMap from './components/AppleMap';
 import DesktopSidebar from './components/DesktopSidebar';
 import MobileBottomSheet from './components/MobileBottomSheet';
 import NavigationHUD from './components/NavigationHUD';
 import DeviceModeBar from './components/DeviceModeBar';
-import LearnerProPaywallModal from './components/LearnerProPaywallModal';
-import OnboardingGuideModal from './components/OnboardingGuideModal';
+
+const LearnerProPaywallModal = lazy(() => import('./components/LearnerProPaywallModal'));
+const OnboardingGuideModal = lazy(() => import('./components/OnboardingGuideModal'));
 import { PRESET_PLACES } from './data/presetPlaces';
 import { LEARNER_ZONES } from './data/learnerZones';
 import { CONE_PRESETS } from './data/conePresets';
@@ -495,19 +496,21 @@ export default function App() {
         </div>
       )}
       {/* B2C Learner PRO Pass Paywall Modal */}
-      <LearnerProPaywallModal
-        isOpen={isPaywallOpen}
-        onClose={() => setIsPaywallOpen(false)}
-        isPro={isPro}
-        onSubscriptionChange={handleSubscriptionChange}
-        highlightFeature={paywallFeature}
-      />
+      <Suspense fallback={null}>
+        <LearnerProPaywallModal
+          isOpen={isPaywallOpen}
+          onClose={() => setIsPaywallOpen(false)}
+          isPro={isPro}
+          onSubscriptionChange={handleSubscriptionChange}
+          highlightFeature={paywallFeature}
+        />
 
-      {/* Visual Onboarding & How-It-Works Guide Modal */}
-      <OnboardingGuideModal
-        isOpen={isOnboardingOpen}
-        onClose={() => setIsOnboardingOpen(false)}
-      />
+        {/* Visual Onboarding & How-It-Works Guide Modal */}
+        <OnboardingGuideModal
+          isOpen={isOnboardingOpen}
+          onClose={() => setIsOnboardingOpen(false)}
+        />
+      </Suspense>
     </div>
   );
 }

@@ -14,5 +14,20 @@ export default defineConfig({
         secure: false
       }
     }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-maplibre': ['maplibre-gl'],
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-icons': ['lucide-react']
+        }
+      }
+    },
+    chunkSizeWarningLimit: 900
+  },
+  test: {
+    exclude: ['**/node_modules/**', '**/dist/**', 'tests/e2e/**']
   }
 });
