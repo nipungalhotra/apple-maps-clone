@@ -114,7 +114,24 @@ npm install
 # 3. Start Frontend & Backend
 npm run dev      # Runs Vite on http://127.0.0.1:3000
 npm run server   # Runs API on http://127.0.0.1:3001
+
+# 4. Run Automated Test Suite (Vitest + Supertest)
+npm test         # Runs 12 unit and integration tests
+
+# 5. Production Build
+npm run build    # Compiles production assets into /dist
 ```
+
+---
+
+## 🔒 Security & Production Hardening
+
+- **MapLibre GL v6:** Upgraded to `maplibre-gl@6.15.0` to eliminate critical XSS vulnerabilities.
+- **API Guard:** Express 5 backend protected by `helmet` security headers, Content Security Policy, and `express-rate-limit` (300 req/15min global, 60 req/15min write operations).
+- **Offline Maps (PWA):** Equipped with a Service Worker (`public/sw.js`) utilizing `CacheFirst` basemap tile caching and automatic mathematical route fallbacks when offline.
+- **Continuous Integration:** Automated GitHub Actions pipeline (`.github/workflows/ci.yml`) validating tests, builds, and dependency audits across Node.js 20 and 22.
+
+👉 **[View Complete REST API Documentation](docs/API_DOCUMENTATION.md)**
 
 ---
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import maplibregl from 'maplibre-gl';
+import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { LEARNER_ZONES } from '../data/learnerZones';
 
@@ -33,11 +33,32 @@ export default function AppleMap({
   const destMarkerRef = useRef(null);
   const learnerMarkersRef = useRef([]);
   const coneMarkersRef = useRef([]);
+  const trafficIncidentMarkersRef = useRef([]);
   const learnerZonesRef = useRef(learnerZones);
+  const isDroppingCustomConeRef = useRef(isDroppingCustomCone);
+  const onDropConeRef = useRef(onDropCone);
+  const onMapClickRef = useRef(onMapClick);
+  const onSelectLearnerZoneRef = useRef(onSelectLearnerZone);
 
   useEffect(() => {
     learnerZonesRef.current = learnerZones;
   }, [learnerZones]);
+
+  useEffect(() => {
+    isDroppingCustomConeRef.current = isDroppingCustomCone;
+  }, [isDroppingCustomCone]);
+
+  useEffect(() => {
+    onDropConeRef.current = onDropCone;
+  }, [onDropCone]);
+
+  useEffect(() => {
+    onMapClickRef.current = onMapClick;
+  }, [onMapClick]);
+
+  useEffect(() => {
+    onSelectLearnerZoneRef.current = onSelectLearnerZone;
+  }, [onSelectLearnerZone]);
 
   // Initialize Map
   useEffect(() => {
@@ -191,33 +212,48 @@ export default function AppleMap({
 
       // Click on Learner Polygons
       map.on('click', 'learner-zones-fill', (e) => {
-        if (e.features && e.features[0] && onSelectLearnerZone) {
+        if (e.features && e.features[0] && onSelectLearnerZoneRef.current) {
           const zoneId = e.features[0].properties.id;
           const currentPool = learnerZonesRef.current || [];
           const found = currentPool.find(z => z.id === zoneId);
-          if (found) onSelectLearnerZone(found);
+          if (found) onSelectLearnerZoneRef.current(found);
         }
       });
     });
 
     map.on('click', (e) => {
-      if (isDroppingCustomCone && onDropCone) {
-        onDropCone(e.lngLat.lng, e.lngLat.lat);
+      if (isDroppingCustomConeRef.current && onDropConeRef.current) {
+        onDropConeRef.current(e.lngLat.lng, e.lngLat.lat);
         return;
       }
       const features = map.queryRenderedFeatures(e.point, { layers: ['learner-zones-fill'] });
-      if (features.length === 0 && onMapClick) {
-        onMapClick([e.lngLat.lng, e.lngLat.lat]);
+      if (features.length === 0 && onMapClickRef.current) {
+        onMapClickRef.current([e.lngLat.lng, e.lngLat.lat]);
       }
     });
 
     mapRef.current = map;
 
     return () => {
+      if (userMarkerRef.current) {
+        userMarkerRef.current.remove();
+        userMarkerRef.current = null;
+      }
+      if (destMarkerRef.current) {
+        destMarkerRef.current.remove();
+        destMarkerRef.current = null;
+      }
+      learnerMarkersRef.current.forEach(m => m.remove());
+      learnerMarkersRef.current = [];
+      coneMarkersRef.current.forEach(m => m.remove());
+      coneMarkersRef.current = [];
+      trafficIncidentMarkersRef.current.forEach(m => m.remove());
+      trafficIncidentMarkersRef.current = [];
+
       map.remove();
       mapRef.current = null;
     };
-  }, [isDroppingCustomCone]);
+  }, [isDarkMode]);
 
   // Recenter Camera explicitly when recenterTrigger is fired
   useEffect(() => {
@@ -329,6 +365,10 @@ export default function AppleMap({
     if (trafficLayer) mapRef.current.setLayoutProperty('traffic-line', 'visibility', visibility);
     if (trafficCasing) mapRef.current.setLayoutProperty('traffic-casing', 'visibility', visibility);
 
+    // Clear any existing incident markers
+    trafficIncidentMarkersRef.current.forEach(m => m.remove());
+    trafficIncidentMarkersRef.current = [];
+
     if (showTraffic) {
       const [lng, lat] = userLocation || [-122.4194, 37.7749];
       fetch(`/api/traffic?lat=${lat}&lng=${lng}`)
@@ -337,6 +377,25 @@ export default function AppleMap({
           const source = mapRef.current?.getSource('traffic-lines');
           if (source && data?.features) {
             source.setData(data);
+          }
+
+          // Render Real-Time Traffic Incident Badges
+          if (mapRef.current && data?.incidents) {
+            data.incidents.forEach(inc => {
+              const el = document.createElement('div');
+              el.className = 'traffic-incident-marker cursor-pointer group transition-transform hover:scale-110';
+              el.innerHTML = `
+                <div class="flex items-center gap-1.5 px-2.5 py-1 bg-amber-500 text-white rounded-full text-[10px] font-black shadow-lg border border-white/40">
+                  <span>⚠️</span>
+                  <span>${inc.title}</span>
+                  <span class="bg-black/20 px-1 rounded-sm text-[9px]">+${inc.delayMinutes}m</span>
+                </div>
+              `;
+              const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
+                .setLngLat(inc.coordinates)
+                .addTo(mapRef.current);
+              trafficIncidentMarkersRef.current.push(marker);
+            });
           }
         })
         .catch(() => {

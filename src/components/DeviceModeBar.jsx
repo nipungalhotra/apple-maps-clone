@@ -1,5 +1,5 @@
 import React from 'react';
-import { Monitor, Smartphone, Maximize2, Sun, Moon, Layers, Locate, Car, Zap, HelpCircle } from 'lucide-react';
+import { Monitor, Smartphone, Maximize2, Sun, Moon, Layers, Locate, Car, Zap, HelpCircle, WifiOff } from 'lucide-react';
 
 export default function DeviceModeBar({
   viewMode,
@@ -13,11 +13,20 @@ export default function DeviceModeBar({
   setShowTraffic = () => {},
   isPro = false,
   onOpenPaywall = () => {},
-  onOpenGuide = () => {}
+  onOpenGuide = () => {},
+  isOffline = false
 }) {
   return (
     <div className="absolute top-4 right-4 z-30 flex flex-col items-end gap-2">
       <div className="flex items-center gap-2">
+        {/* Offline Status Indicator */}
+        {isOffline && (
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-500/90 text-white backdrop-blur-md shadow-apple-card animate-pulse">
+            <WifiOff className="w-3.5 h-3.5" />
+            <span>Offline (Cached Maps)</span>
+          </div>
+        )}
+
         {/* B2C Pro Pass Quick Button */}
         {isPro ? (
           <button

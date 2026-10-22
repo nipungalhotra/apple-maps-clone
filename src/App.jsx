@@ -66,6 +66,22 @@ export default function App() {
   // First-Time Visitor Visual Onboarding Guide State
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
 
+  // Real-Time Online/Offline Connectivity Detection
+  const [isOffline, setIsOffline] = useState(() => typeof navigator !== 'undefined' ? !navigator.onLine : false);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
   useEffect(() => {
     try {
       const shown = localStorage.getItem('roadready_guide_shown');
@@ -334,6 +350,7 @@ export default function App() {
         isPro={isPro}
         onOpenPaywall={handleOpenPaywall}
         onOpenGuide={() => setIsOnboardingOpen(true)}
+        isOffline={isOffline}
       />
 
       {/* NAVIGATION ACTIVE HUD */}

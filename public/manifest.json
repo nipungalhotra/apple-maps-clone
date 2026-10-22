@@ -1,0 +1,17 @@
+{
+  "short_name": "RoadReady",
+  "name": "RoadReady: Safe Driving & DMV Test Prep",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23007AFF'/><path d='M25 75 L45 25 L55 25 L75 75 L60 75 L50 45 L40 75 Z' fill='white'/><circle cx='50' cy='32' r='6' fill='%23FF3B30'/></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#18181b",
+  "theme_color": "#007AFF",
+  "display": "standalone",
+  "orientation": "portrait"
+}
