@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { LEARNER_ZONES } from '../data/learnerZones';
-import { MAP_STYLES } from '../config/mapConfig';
+import { MAP_STYLES, FALLBACK_STYLES } from '../config/mapConfig';
 
 export default function AppleMap({
   center = [-122.4194, 37.7749],
@@ -78,7 +78,12 @@ export default function AppleMap({
     });
 
     map.on('error', (e) => {
-      console.warn('MapLibre runtime or tile loading notice:', e?.error?.message || e);
+      const msg = e?.error?.message || String(e);
+      console.warn('MapLibre runtime or tile loading notice:', msg);
+      if (msg.includes('401') || msg.includes('access token') || msg.includes('Unauthorized') || msg.includes('Forbidden')) {
+        console.warn('Mapbox token error detected, automatically reverting to open vector style');
+        map.setStyle(isDarkMode ? FALLBACK_STYLES.dark : FALLBACK_STYLES.light);
+      }
     });
 
     map.on('load', () => {
