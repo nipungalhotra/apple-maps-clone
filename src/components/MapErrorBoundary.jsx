@@ -21,6 +21,12 @@ export default class MapErrorBoundary extends React.Component {
 
   render() {
     if (this.state.hasError) {
+      if (this.props.fallback) {
+        return typeof this.props.fallback === 'function'
+          ? this.props.fallback({ error: this.state.error, resetErrorBoundary: this.handleRetry })
+          : this.props.fallback;
+      }
+
       return (
         <div
           role="alert"
@@ -61,3 +67,6 @@ export default class MapErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
+
+export { MapErrorBoundary as ErrorBoundary };
+

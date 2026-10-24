@@ -9,6 +9,13 @@ export interface Coordinates {
 
 export type CoordinateTuple = [number, number]; // [lng, lat]
 
+export interface Region {
+  latitude: number;
+  longitude: number;
+  latitudeDelta: number;
+  longitudeDelta: number;
+}
+
 export interface Place {
   id: string;
   name: string;
@@ -28,17 +35,25 @@ export interface Place {
 export interface LearnerZone {
   id: string;
   name: string;
-  type: 'parking_lot' | 'quiet_street' | 'business_park' | 'school_lot';
+  subtitle?: string;
+  type: 'open_ground' | 'quiet_road' | 'parking_lot' | 'training_circuit' | 'business_park' | 'school_lot' | string;
+  vehicleTypes?: string[]; // e.g. ['car', 'bike']
   safetyScore: number;
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  difficulty: 'Absolute Beginner' | 'Beginner' | 'Intermediate' | 'Advanced' | string;
   coordinates: CoordinateTuple;
   polygon?: CoordinateTuple[];
   pathCoordinates?: CoordinateTuple[];
-  surfaceCondition: string;
-  bestTime: string;
-  gateStatus: string;
-  features: string[];
-  recommendedDrills: string[];
+  surface?: string;
+  surfaceCondition?: string;
+  bestTime?: string;
+  bestHours?: string;
+  trafficLevel?: string;
+  widthMeters?: number;
+  gateStatus?: string;
+  features?: string[];
+  perks?: string[];
+  recommendedDrills?: string[];
+  description?: string;
 }
 
 export interface ConeMarker {
@@ -47,6 +62,16 @@ export interface ConeMarker {
   label?: string;
   lng: number;
   lat: number;
+}
+
+export interface ConePreset {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  difficulty: string;
+  recommendedSpace: string;
+  generateCones: (originLng: number, originLat: number) => ConeMarker[];
 }
 
 export interface RouteStep {
@@ -60,12 +85,14 @@ export interface RouteStep {
   location?: CoordinateTuple;
 }
 
+export type RouteMode = 'driving' | 'walking' | 'cycling' | 'transit';
+
 export interface RouteData {
   coordinates: CoordinateTuple[];
   distanceMeters: number;
   durationSeconds: number;
   steps: RouteStep[];
-  mode: 'driving' | 'walking' | 'cycling' | 'transit';
+  mode: RouteMode;
 }
 
 export interface PassportMetrics {
@@ -85,7 +112,114 @@ export interface CommunityReport {
   notes: string;
 }
 
+export interface DMVCheckpoint {
+  id: string;
+  title: string;
+  instruction: string;
+  points: number;
+  criteria: string;
+}
+
+export interface DMVTestRoute {
+  id: string;
+  name: string;
+  officeName: string;
+  coordinates: CoordinateTuple;
+  durationMins: number;
+  distanceMiles: number;
+  passScoreThreshold: number;
+  description: string;
+  checkpoints: DMVCheckpoint[];
+  pathCoordinates?: CoordinateTuple[];
+}
+
+export interface InstructorPricingPackage {
+  id: string;
+  name: string;
+  price: number;
+  duration: string;
+  desc: string;
+}
+
+export interface Instructor {
+  id: string;
+  name: string;
+  schoolName: string;
+  title: string;
+  rating: number;
+  reviewsCount: number;
+  studentsPassed: number;
+  hourlyRate: number;
+  car: string;
+  transmission: string[];
+  phone: string;
+  licenseNumber: string;
+  bio: string;
+  specialties: string[];
+  pricingPackages: InstructorPricingPackage[];
+  meetAtGrounds: string[];
+  availableToday: boolean;
+  nextSlot: string;
+}
+
+export interface InsurancePartner {
+  id: string;
+  name: string;
+  logo: string;
+  tagline: string;
+  avgDiscount: string;
+  estimatedAnnualSavings: number;
+  cpaPayout: number;
+  quoteTimeMins: string;
+  features: string[];
+  badge: string;
+  affiliateUrl: string;
+}
+
+export interface TrafficIncident {
+  id: string;
+  title: string;
+  delayMinutes: number;
+  coordinates: CoordinateTuple;
+}
+
+export interface TrafficFeature {
+  type: 'Feature';
+  properties: {
+    color: string;
+    speedMph: number;
+  };
+  geometry: {
+    type: 'LineString';
+    coordinates: CoordinateTuple[];
+  };
+}
+
+export interface TrafficCollection {
+  type: 'FeatureCollection';
+  features: TrafficFeature[];
+  incidents?: TrafficIncident[];
+}
+
+export interface SubscriptionState {
+  isPro: boolean;
+  planId?: string | null;
+  status?: string;
+  expiresAt?: string | null;
+}
+
+export interface LocationState {
+  location: CoordinateTuple;
+  error: string | null;
+  permissionStatus: string;
+}
+
 export interface MapScreenProps {
+  initialRegion?: Region;
+  styleURL?: string;
+  onError?: (error: any) => void;
+  onLoad?: () => void;
+  children?: any;
   center?: CoordinateTuple;
   zoom?: number;
   pitch?: number;
@@ -105,6 +239,7 @@ export interface MapScreenProps {
   cones?: ConeMarker[];
   onDropCone?: (lng: number, lat: number) => void;
   isDroppingCustomCone?: boolean;
+  activeDmvRoute?: DMVTestRoute | null;
   recenterTrigger?: number;
   showTraffic?: boolean;
 }
