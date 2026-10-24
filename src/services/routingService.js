@@ -1,3 +1,5 @@
+import { API_ENDPOINTS } from '../config/mapConfig';
+
 /**
  * Apple Maps Routing Engine Service
  * Connects to Open Source Routing Machine (OSRM) public API with simulated route fallback
@@ -6,7 +8,7 @@
 export async function calculateRoute(startCoord, endCoord, mode = 'driving') {
   // mode: 'driving' | 'walking' | 'cycling'
   const osrmProfile = mode === 'walking' ? 'foot' : mode === 'cycling' ? 'bike' : 'car';
-  const url = `https://router.project-osrm.org/route/v1/${osrmProfile}/${startCoord[0]},${startCoord[1]};${endCoord[0]},${endCoord[1]}?overview=full&geometries=geojson&steps=true`;
+  const url = `${API_ENDPOINTS.osrmRouting}/${osrmProfile}/${startCoord[0]},${startCoord[1]};${endCoord[0]},${endCoord[1]}?overview=full&geometries=geojson&steps=true`;
 
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(6000) });

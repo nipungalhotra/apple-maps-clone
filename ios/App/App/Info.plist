@@ -28,6 +28,8 @@
 	<string>Apple Maps Learner needs your location to discover safe practice grounds and display turn-by-turn navigation.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Apple Maps Learner uses background location for turn-by-turn voice directions during practice drives.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Apple Maps Learner uses background location for turn-by-turn voice directions during practice drives.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

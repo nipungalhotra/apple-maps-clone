@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { LEARNER_ZONES } from '../data/learnerZones';
+import { MAP_STYLES } from '../config/mapConfig';
 
 export default function AppleMap({
   center = [-122.4194, 37.7749],
@@ -64,9 +65,7 @@ export default function AppleMap({
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
 
-    const styleUrl = isDarkMode
-      ? 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
-      : 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
+    const styleUrl = isDarkMode ? MAP_STYLES.dark : MAP_STYLES.light;
 
     const map = new maplibregl.Map({
       container: mapContainer.current,
@@ -76,6 +75,10 @@ export default function AppleMap({
       pitch: pitch,
       bearing: bearing,
       attributionControl: false
+    });
+
+    map.on('error', (e) => {
+      console.warn('MapLibre runtime or tile loading notice:', e?.error?.message || e);
     });
 
     map.on('load', () => {
@@ -599,8 +602,17 @@ export default function AppleMap({
   }, [isNavigating, activeStepIndex, routeData]);
 
   return (
-    <div className="relative w-full h-full overflow-hidden">
-      <div ref={mapContainer} className="w-full h-full" />
+    <div
+      className="relative w-full h-full overflow-hidden"
+      role="region"
+      aria-label="RoadReady Interactive Practice Map"
+    >
+      <div
+        ref={mapContainer}
+        className="w-full h-full focus:outline-none"
+        tabIndex={0}
+        aria-label="Interactive Map Surface"
+      />
     </div>
   );
 }

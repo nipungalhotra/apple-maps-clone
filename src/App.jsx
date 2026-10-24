@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import AppleMap from './components/AppleMap';
+import MapErrorBoundary from './components/MapErrorBoundary';
 import DesktopSidebar from './components/DesktopSidebar';
 import MobileBottomSheet from './components/MobileBottomSheet';
 import NavigationHUD from './components/NavigationHUD';
@@ -19,7 +20,12 @@ import { getSubscriptionState } from './services/subscriptionService';
 
 export default function App() {
   const [viewMode, setViewMode] = useState('desktop'); // 'desktop' | 'mobile' | 'responsive'
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
   const [is3D, setIs3D] = useState(false);
 
   // Locations & Routing State
@@ -126,7 +132,7 @@ export default function App() {
   // Favorites
   const [favorites, setFavorites] = useState([PRESET_PLACES[0], PRESET_PLACES[1]]);
 
-  // Sync Dark Mode class with root document
+  // Sync Dark Mode class with root document and system preference changes
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -134,6 +140,14 @@ export default function App() {
       document.documentElement.classList.remove('dark');
     }
   }, [isDarkMode]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (e) => setIsDarkMode(e.matches);
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
 
   // Debounced Search
   useEffect(() => {
@@ -314,28 +328,30 @@ export default function App() {
 
   const MapContent = (
     <div className="relative w-full h-full overflow-hidden select-none">
-      <AppleMap
-        center={selectedLearnerZone ? selectedLearnerZone.coordinates : selectedPlace ? selectedPlace.coordinates : userLocation}
-        zoom={selectedLearnerZone ? 16.5 : selectedPlace ? 15 : 13}
-        is3D={is3D}
-        routeData={routeData}
-        activeStepIndex={activeStepIndex}
-        selectedPlace={selectedPlace}
-        onMapClick={handleMapClick}
-        onSelectLearnerZone={handleSelectLearnerZone}
-        isNavigating={isNavigating}
-        userLocation={userLocation}
-        isDarkMode={isDarkMode}
-        learnerModeActive={activeMainTab === 'learner'}
-        selectedLearnerZone={selectedLearnerZone}
-        cones={cones}
-        onDropCone={handleDropCustomCone}
-        isDroppingCustomCone={isDroppingCustomCone}
-        activeDmvRoute={activeDmvRoute}
-        recenterTrigger={recenterTrigger}
-        learnerZones={learnerZones}
-        showTraffic={showTraffic}
-      />
+      <MapErrorBoundary>
+        <AppleMap
+          center={selectedLearnerZone ? selectedLearnerZone.coordinates : selectedPlace ? selectedPlace.coordinates : userLocation}
+          zoom={selectedLearnerZone ? 16.5 : selectedPlace ? 15 : 13}
+          is3D={is3D}
+          routeData={routeData}
+          activeStepIndex={activeStepIndex}
+          selectedPlace={selectedPlace}
+          onMapClick={handleMapClick}
+          onSelectLearnerZone={handleSelectLearnerZone}
+          isNavigating={isNavigating}
+          userLocation={userLocation}
+          isDarkMode={isDarkMode}
+          learnerModeActive={activeMainTab === 'learner'}
+          selectedLearnerZone={selectedLearnerZone}
+          cones={cones}
+          onDropCone={handleDropCustomCone}
+          isDroppingCustomCone={isDroppingCustomCone}
+          activeDmvRoute={activeDmvRoute}
+          recenterTrigger={recenterTrigger}
+          learnerZones={learnerZones}
+          showTraffic={showTraffic}
+        />
+      </MapErrorBoundary>
 
       {/* Top Device & View Controls */}
       <DeviceModeBar
