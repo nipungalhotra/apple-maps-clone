@@ -4,6 +4,25 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { LEARNER_ZONES } from '../data/learnerZones';
 import { MAP_STYLES, FALLBACK_STYLES } from '../config/mapConfig';
 
+const isValidCoord = (c) => (
+  Array.isArray(c) &&
+  c.length >= 2 &&
+  typeof c[0] === 'number' &&
+  typeof c[1] === 'number' &&
+  !isNaN(c[0]) &&
+  !isNaN(c[1])
+);
+
+const isWebGLAvailable = () => {
+  try {
+    if (typeof window === 'undefined') return true;
+    const canvas = document.createElement('canvas');
+    return !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+  } catch {
+    return false;
+  }
+};
+
 export default function AppleMap({
   center = [-122.4194, 37.7749],
   zoom = 13,
@@ -65,17 +84,39 @@ export default function AppleMap({
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
 
+    if (!isWebGLAvailable()) {
+      console.warn('WebGL is not supported or hardware acceleration is disabled.');
+    }
+
+    const safeCenter = isValidCoord(center) ? [center[0], center[1]] : [-122.4194, 37.7749];
+    const safeZoom = typeof zoom === 'number' && !isNaN(zoom) ? zoom : 13;
+    const safePitch = typeof pitch === 'number' && !isNaN(pitch) ? pitch : 0;
+    const safeBearing = typeof bearing === 'number' && !isNaN(bearing) ? bearing : 0;
     const styleUrl = isDarkMode ? MAP_STYLES.dark : MAP_STYLES.light;
 
-    const map = new maplibregl.Map({
-      container: mapContainer.current,
-      style: styleUrl,
-      center: center,
-      zoom: zoom,
-      pitch: pitch,
-      bearing: bearing,
-      attributionControl: false
-    });
+    let map;
+    try {
+      map = new maplibregl.Map({
+        container: mapContainer.current,
+        style: styleUrl,
+        center: safeCenter,
+        zoom: safeZoom,
+        pitch: safePitch,
+        bearing: safeBearing,
+        attributionControl: false
+      });
+    } catch (err) {
+      console.warn('MapLibre primary initialization fallback triggered:', err);
+      map = new maplibregl.Map({
+        container: mapContainer.current,
+        style: isDarkMode ? FALLBACK_STYLES.dark : FALLBACK_STYLES.light,
+        center: safeCenter,
+        zoom: safeZoom,
+        pitch: safePitch,
+        bearing: safeBearing,
+        attributionControl: false
+      });
+    }
 
     map.on('error', (e) => {
       const msg = e?.error?.message || String(e);
@@ -265,7 +306,7 @@ export default function AppleMap({
 
   // Recenter Camera explicitly when recenterTrigger is fired
   useEffect(() => {
-    if (!mapRef.current || !userLocation || recenterTrigger === 0) return;
+    if (!mapRef.current || !isValidCoord(userLocation) || recenterTrigger === 0) return;
     mapRef.current.flyTo({
       center: userLocation,
       zoom: 16,
@@ -283,7 +324,7 @@ export default function AppleMap({
       destMarkerRef.current = null;
     }
 
-    if (selectedPlace && selectedPlace.coordinates) {
+    if (selectedPlace && isValidCoord(selectedPlace.coordinates)) {
       const el = document.createElement('div');
       el.className = 'selected-place-pin cursor-pointer group';
       el.innerHTML = `
@@ -509,7 +550,7 @@ export default function AppleMap({
 
   // Camera animations for selected learner zone
   useEffect(() => {
-    if (!mapRef.current || !selectedLearnerZone || isNavigating || !learnerModeActive) return;
+    if (!mapRef.current || !selectedLearnerZone || !isValidCoord(selectedLearnerZone.coordinates) || isNavigating || !learnerModeActive) return;
     mapRef.current.flyTo({
       center: selectedLearnerZone.coordinates,
       zoom: 16.5,
@@ -542,15 +583,17 @@ export default function AppleMap({
         });
 
         if (!isNavigating) {
-          const coords = routeData.coordinates;
-          const bounds = coords.reduce(
-            (b, coord) => b.extend(coord),
-            new maplibregl.LngLatBounds(coords[0], coords[0])
-          );
-          mapRef.current.fitBounds(bounds, {
-            padding: { top: 90, bottom: 90, left: 380, right: 90 },
-            duration: 1200
-          });
+          const coords = (routeData.coordinates || []).filter(isValidCoord);
+          if (coords.length > 0) {
+            const bounds = coords.reduce(
+              (b, coord) => b.extend(coord),
+              new maplibregl.LngLatBounds(coords[0], coords[0])
+            );
+            mapRef.current.fitBounds(bounds, {
+              padding: { top: 90, bottom: 90, left: 380, right: 90 },
+              duration: 1200
+            });
+          }
         }
       } else {
         source.setData({
@@ -563,7 +606,7 @@ export default function AppleMap({
 
   // User puck
   useEffect(() => {
-    if (!mapRef.current || !userLocation) return;
+    if (!mapRef.current || !isValidCoord(userLocation)) return;
     if (!userMarkerRef.current) {
       const el = document.createElement('div');
       el.className = 'apple-user-location-puck';
@@ -586,7 +629,8 @@ export default function AppleMap({
   // Navigation tracking
   useEffect(() => {
     if (!mapRef.current || !isNavigating || !routeData) return;
-    const coords = routeData.coordinates;
+    const coords = (routeData.coordinates || []).filter(isValidCoord);
+    if (coords.length === 0) return;
     const currentCoord = coords[activeStepIndex] || coords[0];
 
     let heading = 0;
