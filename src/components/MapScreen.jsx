@@ -2,11 +2,12 @@ import React from 'react';
 import AppleMap from './AppleMap';
 import MapErrorBoundary from './MapErrorBoundary';
 import { MAP_STYLES } from '../config/mapConfig';
+import { offlineManager } from '../services/offlinePacks';
 
 /**
  * MapScreen Component
  * Production-ready container supporting MapScreenProps, error boundaries,
- * and seamless fallback rendering.
+ * and seamless fallback rendering with explicit backgroundColor theming.
  */
 export default function MapScreen({
   initialRegion = {
@@ -16,9 +17,12 @@ export default function MapScreen({
     longitudeDelta: 0.0421
   },
   styleURL = MAP_STYLES.light,
+  backgroundColor,
+  isDarkMode = false,
   onError,
   onLoad,
   children,
+  style,
   ...props
 }) {
   const center = [initialRegion?.longitude ?? -122.4194, initialRegion?.latitude ?? 37.7749];
@@ -26,12 +30,18 @@ export default function MapScreen({
     ? Math.max(1, Math.min(20, Math.round(Math.log2(360 / initialRegion.longitudeDelta))))
     : 13;
 
+  const resolvedBgColor = backgroundColor || (isDarkMode ? '#09090b' : '#f4f4f5');
+
   return (
     <MapErrorBoundary>
-      <div className="relative w-full h-full flex-1">
+      <div
+        className="relative w-full h-full flex-1 transition-colors duration-200"
+        style={{ backgroundColor: resolvedBgColor, ...style }}
+      >
         <AppleMap
           center={center}
           zoom={zoom}
+          isDarkMode={isDarkMode}
           onError={onError}
           onLoad={onLoad}
           {...props}
@@ -62,5 +72,6 @@ export const MapboxGL = {
   },
   UserLocation: function UserLocation() {
     return null;
-  }
+  },
+  offlineManager
 };

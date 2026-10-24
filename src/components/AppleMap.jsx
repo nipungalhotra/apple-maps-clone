@@ -652,13 +652,17 @@ export default function AppleMap({
 
   return (
     <div
-      className="relative w-full h-full overflow-hidden"
+      className={`relative w-full h-full overflow-hidden transition-colors duration-200 ${
+        isDarkMode ? 'bg-zinc-950 text-white' : 'bg-zinc-100 text-zinc-900'
+      }`}
+      style={{ backgroundColor: isDarkMode ? '#09090b' : '#f4f4f5' }}
       role="region"
       aria-label="RoadReady Interactive Practice Map"
     >
       <div
         ref={mapContainer}
         className="w-full h-full focus:outline-none"
+        style={{ backgroundColor: isDarkMode ? '#09090b' : '#f4f4f5' }}
         tabIndex={0}
         aria-label="Interactive Map Surface"
       />

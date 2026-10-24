@@ -475,7 +475,10 @@ export default function App() {
   );
 
   return (
-    <div className={`w-screen h-screen flex items-center justify-center ${isDarkMode ? 'dark bg-zinc-950' : 'bg-zinc-100'} transition-colors`}>
+    <div
+      className={`w-screen h-screen flex items-center justify-center ${isDarkMode ? 'dark bg-zinc-950 text-zinc-100' : 'bg-zinc-100 text-zinc-900'} transition-colors duration-200`}
+      style={{ backgroundColor: isDarkMode ? '#09090b' : '#f4f4f5' }}
+    >
       {viewMode === 'mobile' ? (
         <div className="relative w-[400px] h-[844px] rounded-[54px] bg-zinc-900 p-3 shadow-[0_25px_70px_rgba(0,0,0,0.55)] border-[5px] border-zinc-700/80 flex flex-col overflow-hidden">
           {/* Dynamic Island */}

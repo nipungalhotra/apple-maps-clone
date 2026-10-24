@@ -128,7 +128,12 @@ npm run build    # Compiles production assets into /dist
 
 - **MapLibre GL v6:** Upgraded to `maplibre-gl@6.15.0` to eliminate critical XSS vulnerabilities.
 - **API Guard:** Express 5 backend protected by `helmet` security headers, Content Security Policy, and `express-rate-limit` (300 req/15min global, 60 req/15min write operations).
-- **Offline Maps (PWA):** Equipped with a Service Worker (`public/sw.js`) utilizing `CacheFirst` basemap tile caching and automatic mathematical route fallbacks when offline.
+- **Offline Maps & Limitations:** Equipped with a Service Worker (`public/sw.js`) and [`offlineManager`](src/services/offlinePacks.js) with `CacheFirst` tile persistence.
+  - *Storage Quotas:* Browser CacheStorage typically allocates 50MB–500MB of storage.
+  - *Recommended Zoom Limits:* Offline packs target zoom levels 10 to 15 (neighborhood practice level); zoom levels >16 increase tile counts exponentially.
+  - *Network Dependencies:* Live OSRM recalculation and real-time incident feeds require internet; built-in mathematical routing and curated DMV routes execute 100% offline.
+- **Debounced Location & Search Engine:** High-frequency GPS updates are debounced to 1000ms with a 5-meter micro-movement threshold to eliminate render stutter and UI lag. Search queries are debounced to 250ms with unmount cancellation.
+- **Dynamic Theming & Explicit Backgrounds:** Every container and viewport enforces explicit `backgroundColor` styles (`#f4f4f5` light / `#09090b` dark) synchronized with `window.matchMedia('(prefers-color-scheme: dark)')` to prevent unstyled or transparent layout flashes.
 - **Continuous Integration:** Automated GitHub Actions pipeline (`.github/workflows/ci.yml`) validating tests, builds, and dependency audits across Node.js 20 and 22.
 
 👉 **[View Complete REST API Documentation](docs/API_DOCUMENTATION.md)**

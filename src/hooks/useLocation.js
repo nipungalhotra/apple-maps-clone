@@ -1,17 +1,28 @@
 import { useState, useEffect } from 'react';
 import { Geolocation } from '@capacitor/geolocation';
 
-function debounce(fn, wait = 1000) {
-  let timer;
-  return function (...args) {
-    clearTimeout(timer);
-    timer = setTimeout(() => fn.apply(this, args), wait);
+export function debounce(fn, wait = 1000) {
+  let timer = null;
+  const debounced = function (...args) {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => {
+      timer = null;
+      fn.apply(this, args);
+    }, wait);
   };
+  debounced.cancel = () => {
+    if (timer) {
+      clearTimeout(timer);
+      timer = null;
+    }
+  };
+  return debounced;
 }
 
 /**
  * useLocation Hook
  * Provides debounced location updates, permission error handling, and GPS coordinates.
+ * Throttles high-frequency watchPosition triggers to prevent UI lag.
  */
 export function useLocation(options = { debounceMs: 1000 }) {
   const [location, setLocation] = useState([-122.4194, 37.7749]);
@@ -22,7 +33,16 @@ export function useLocation(options = { debounceMs: 1000 }) {
     let watchId = null;
 
     const debouncedSetLocation = debounce((coords) => {
-      setLocation(coords);
+      setLocation(prev => {
+        // Prevent re-rendering if coordinates changed by less than ~5 meters (0.00005 deg)
+        if (
+          Math.abs(prev[0] - coords[0]) < 0.00005 &&
+          Math.abs(prev[1] - coords[1]) < 0.00005
+        ) {
+          return prev;
+        }
+        return coords;
+      });
     }, options.debounceMs || 1000);
 
     const initLocation = async () => {
@@ -74,6 +94,7 @@ export function useLocation(options = { debounceMs: 1000 }) {
     initLocation();
 
     return () => {
+      debouncedSetLocation.cancel();
       if (watchId !== null) {
         if (typeof watchId === 'string' && Geolocation?.clearWatch) {
           Geolocation.clearWatch({ id: watchId });

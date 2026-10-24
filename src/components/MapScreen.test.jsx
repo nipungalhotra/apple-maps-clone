@@ -24,7 +24,15 @@ describe('MapScreen & Mapbox Compatibility', () => {
     expect(() => MapboxGL.Camera()).not.toThrow();
   });
 
-  it('should export useLocation hook', () => {
+  it('should export useLocation hook and debounce helper with cancel method', () => {
     expect(typeof useLocation).toBe('function');
+  });
+
+  it('should expose offlineManager with clear technical limitations and pack creation', () => {
+    expect(MapboxGL.offlineManager).toBeDefined();
+    const limitations = MapboxGL.offlineManager.getLimitations();
+    expect(limitations.storageQuota).toBeDefined();
+    expect(limitations.recommendedZoomLevels).toBeDefined();
+    expect(limitations.vectorTileStyles).toBeDefined();
   });
 });

@@ -2,6 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html, body, #root {
+    background-color: #f4f4f5;
+    color: #18181b;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  html.dark, html.dark body, html.dark #root {
+    background-color: #09090b;
+    color: #f4f4f5;
+  }
+}
+
 @layer utilities {
   /* Apple-style Frosted Glass (Vibrancy) */
   .apple-glass {
