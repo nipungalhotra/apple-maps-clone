@@ -33,6 +33,7 @@ export default function DeviceModeBar({
             onClick={() => onOpenPaywall()}
             className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-black bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md active:scale-95 transition-all"
             title="Learner PRO Activated - Click to Manage"
+            aria-label="Learner PRO Subscription Activated - Manage Account"
           >
             <span>PRO PASS 👑</span>
           </button>
@@ -41,6 +42,7 @@ export default function DeviceModeBar({
             onClick={() => onOpenPaywall()}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black bg-gradient-to-r from-amber-500 via-orange-500 to-rose-600 hover:opacity-95 text-white shadow-md active:scale-95 transition-all"
             title="Unlock Unlimited Grounds, DMV Test Simulator & Certified PDF Log"
+            aria-label="Unlock Learner PRO Pass for $29.99"
           >
             <Zap className="w-3.5 h-3.5 fill-white" />
             <span>PRO $29.99</span>
@@ -48,10 +50,11 @@ export default function DeviceModeBar({
         )}
 
         {/* Device Mode Switcher Pill */}
-        <div className="flex items-center p-1 bg-white/80 dark:bg-zinc-800/80 backdrop-blur-xl rounded-full shadow-apple-pill border border-black/5 dark:border-white/10">
+        <div className="flex items-center p-1 bg-white/80 dark:bg-zinc-800/80 backdrop-blur-xl rounded-full shadow-apple-pill border border-black/5 dark:border-white/10" role="group" aria-label="Device Viewport Switcher">
           <button
             onClick={() => setViewMode('desktop')}
             title="Desktop App Layout (macOS)"
+            aria-label="Switch to macOS Desktop Layout"
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
               viewMode === 'desktop'
                 ? 'bg-apple-blue text-white shadow-sm'
@@ -65,6 +68,7 @@ export default function DeviceModeBar({
           <button
             onClick={() => setViewMode('mobile')}
             title="Mobile App Layout (iOS iPhone Frame)"
+            aria-label="Switch to iOS iPhone Mobile Simulator"
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
               viewMode === 'mobile'
                 ? 'bg-apple-blue text-white shadow-sm'
@@ -78,6 +82,7 @@ export default function DeviceModeBar({
           <button
             onClick={() => setViewMode('responsive')}
             title="Responsive Browser Layout"
+            aria-label="Switch to Responsive Fullscreen Browser Layout"
             className={`p-1.5 rounded-full text-xs font-bold transition-all ${
               viewMode === 'responsive'
                 ? 'bg-apple-blue text-white shadow-sm'
@@ -89,11 +94,12 @@ export default function DeviceModeBar({
         </div>
 
         {/* Map Control Utilities */}
-        <div className="flex items-center p-1 bg-white/80 dark:bg-zinc-800/80 backdrop-blur-xl rounded-full shadow-apple-pill border border-black/5 dark:border-white/10">
+        <div className="flex items-center p-1 bg-white/80 dark:bg-zinc-800/80 backdrop-blur-xl rounded-full shadow-apple-pill border border-black/5 dark:border-white/10" role="group" aria-label="Map Visual Controls">
           {/* Live Traffic Overlay Toggle */}
           <button
             onClick={() => setShowTraffic(!showTraffic)}
             title="Toggle Live Traffic Facility"
+            aria-label="Toggle Live Traffic Facility Overlay"
             className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-bold transition-all ${
               showTraffic
                 ? 'bg-emerald-500 text-white shadow-sm'
@@ -108,6 +114,7 @@ export default function DeviceModeBar({
           <button
             onClick={() => setIs3D(!is3D)}
             title="Toggle 3D Perspective"
+            aria-label="Toggle 3D Map Perspective"
             className={`px-2.5 py-1.5 rounded-full text-xs font-black transition-all ${
               is3D
                 ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900'
@@ -121,6 +128,7 @@ export default function DeviceModeBar({
           <button
             onClick={onRecenter}
             title="Recenter Map on Current Location"
+            aria-label="Recenter Map on Current GPS Location"
             className="p-1.5 rounded-full text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 transition-colors"
           >
             <Locate className="w-4 h-4" />
@@ -130,6 +138,7 @@ export default function DeviceModeBar({
           <button
             onClick={() => setIsDarkMode(!isDarkMode)}
             title="Toggle Dark Mode"
+            aria-label={isDarkMode ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
             className="p-1.5 rounded-full text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 transition-colors"
           >
             {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
@@ -139,6 +148,7 @@ export default function DeviceModeBar({
           <button
             onClick={onOpenGuide}
             title="How RoadReady Works (Visual Guide)"
+            aria-label="Open RoadReady Visual How It Works Guide"
             className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
           >
             <HelpCircle className="w-3.5 h-3.5 text-emerald-500" />

@@ -78,13 +78,16 @@ export default function DesktopSidebar({
       {/* Top Header & Search Bar */}
       <div className="p-3.5 border-b border-black/5 dark:border-white/10 space-y-2.5">
         {/* Main Mode Toggle: Standard Maps vs Learner FreeSpace */}
-        <div className="grid grid-cols-2 gap-1 p-1 bg-black/5 dark:bg-white/10 rounded-xl">
+        <div className="grid grid-cols-2 gap-1 p-1 bg-black/5 dark:bg-white/10 rounded-xl" role="tablist" aria-label="Main Navigation Tabs">
           <button
+            role="tab"
+            aria-selected={activeMainTab === 'explore'}
+            aria-label="Explore Standard Apple Maps"
             onClick={() => setActiveMainTab('explore')}
             className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
               activeMainTab === 'explore'
                 ? 'bg-white dark:bg-zinc-800 text-apple-blue shadow-sm'
-                : 'text-zinc-500 hover:text-zinc-900'
+                : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100'
             }`}
           >
             <Compass className="w-3.5 h-3.5" />
@@ -92,11 +95,14 @@ export default function DesktopSidebar({
           </button>
 
           <button
+            role="tab"
+            aria-selected={activeMainTab === 'learner'}
+            aria-label="Switch to RoadReady Learner Driver Mode"
             onClick={() => setActiveMainTab('learner')}
             className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
               activeMainTab === 'learner'
                 ? 'bg-emerald-500 text-white shadow-sm'
-                : 'text-zinc-500 hover:text-zinc-900'
+                : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100'
             }`}
           >
             <ShieldCheck className="w-3.5 h-3.5" />
@@ -113,12 +119,14 @@ export default function DesktopSidebar({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search Apple Maps"
+              aria-label="Search places and addresses"
               className="w-full pl-9 pr-8 py-2 text-sm bg-black/5 dark:bg-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-apple-blue/50 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 font-medium"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 p-1 rounded-full text-zinc-400 hover:text-zinc-600"
+                aria-label="Clear search input"
+                className="absolute right-2.5 p-1 rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -128,12 +136,13 @@ export default function DesktopSidebar({
 
         {/* Quick Category Pills */}
         {activeMainTab === 'explore' && !selectedPlace && !routeData && (
-          <div className="flex gap-1.5 overflow-x-auto pt-1 pb-1 no-scrollbar">
+          <div className="flex gap-1.5 overflow-x-auto pt-1 pb-1 no-scrollbar" role="group" aria-label="Quick Category Search">
             {CATEGORIES.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setSearchQuery(cat.label)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-white/70 dark:bg-zinc-800/70 hover:bg-white text-xs font-semibold whitespace-nowrap text-zinc-700 dark:text-zinc-200 border border-black/5 dark:border-white/5 transition-colors shadow-sm"
+                aria-label={`Search ${cat.label}`}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-white/70 dark:bg-zinc-800/70 hover:bg-white dark:hover:bg-zinc-700 text-xs font-semibold whitespace-nowrap text-zinc-700 dark:text-zinc-200 border border-black/5 dark:border-white/5 transition-colors shadow-sm"
               >
                 <span style={{ color: cat.color }}>{getCategoryIcon(cat.icon)}</span>
                 {cat.label}
@@ -180,6 +189,7 @@ export default function DesktopSidebar({
                 <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">Route Overview</span>
                 <button
                   onClick={onClearRoute}
+                  aria-label="Clear calculated route"
                   className="text-xs font-semibold text-apple-red hover:underline"
                 >
                   Clear
@@ -187,7 +197,7 @@ export default function DesktopSidebar({
               </div>
 
               {/* Travel Mode Selector */}
-              <div className="grid grid-cols-3 gap-1 p-1 bg-black/5 dark:bg-white/10 rounded-lg">
+              <div className="grid grid-cols-3 gap-1 p-1 bg-black/5 dark:bg-white/10 rounded-lg" role="group" aria-label="Route Travel Mode Selector">
                 {[
                   { id: 'driving', label: 'Drive', icon: Car },
                   { id: 'walking', label: 'Walk', icon: Footprints },
@@ -199,6 +209,7 @@ export default function DesktopSidebar({
                       setRouteMode(id);
                       if (selectedPlace) onRequestRoute(selectedPlace, id);
                     }}
+                    aria-label={`Select ${label} navigation mode`}
                     className={`flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-semibold transition-all ${
                       routeMode === id
                         ? 'bg-white dark:bg-zinc-700 text-apple-blue shadow-sm'
@@ -224,6 +235,7 @@ export default function DesktopSidebar({
 
                 <button
                   onClick={onStartNavigation}
+                  aria-label="Start turn-by-turn navigation"
                   className="flex items-center gap-2 px-4 py-2.5 bg-apple-green text-white font-bold text-sm rounded-full shadow-md hover:bg-green-600 transition-all active:scale-95"
                 >
                   <Play className="w-4 h-4 fill-white" />
@@ -269,6 +281,7 @@ export default function DesktopSidebar({
                 />
                 <button
                   onClick={() => setSelectedPlace(null)}
+                  aria-label={`Close ${selectedPlace.name} details`}
                   className="absolute top-3 right-3 p-1.5 bg-black/60 text-white rounded-full backdrop-blur-md hover:bg-black/80"
                 >
                   <X className="w-4 h-4" />
@@ -294,9 +307,10 @@ export default function DesktopSidebar({
             </div>
 
             {/* Action Buttons */}
-            <div className="grid grid-cols-4 gap-2 py-1">
+            <div className="grid grid-cols-4 gap-2 py-1" role="group" aria-label="Place Actions">
               <button
                 onClick={() => onRequestRoute(selectedPlace, routeMode)}
+                aria-label={`Get directions to ${selectedPlace.name}`}
                 className="col-span-2 flex items-center justify-center gap-2 py-2.5 bg-apple-blue text-white rounded-xl font-bold text-sm shadow-md hover:bg-blue-600 transition-all active:scale-95"
               >
                 <NavIcon className="w-4 h-4" />
@@ -305,6 +319,7 @@ export default function DesktopSidebar({
 
               <button
                 onClick={() => onToggleFavorite(selectedPlace)}
+                aria-label={isFavorite ? `Remove ${selectedPlace.name} from saved favorites` : `Save ${selectedPlace.name} to favorites`}
                 className={`flex flex-col items-center justify-center py-2 rounded-xl text-xs font-semibold border transition-all ${
                   isFavorite
                     ? 'bg-rose-50 dark:bg-rose-950/40 text-apple-red border-apple-red/30'
@@ -317,6 +332,7 @@ export default function DesktopSidebar({
 
               <button
                 onClick={() => navigator.clipboard?.writeText(window.location.href)}
+                aria-label={`Share link for ${selectedPlace.name}`}
                 className="flex flex-col items-center justify-center py-2 rounded-xl text-xs font-semibold bg-white/60 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-200 border border-black/5 dark:border-white/5 hover:bg-white"
               >
                 <Share2 className="w-4 h-4" />
