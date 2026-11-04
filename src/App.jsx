@@ -14,7 +14,8 @@ import { searchLocations } from './services/searchService';
 import { calculateRoute } from './services/routingService';
 import { siriVoice } from './services/voiceService';
 import { generateLearnerZonesForLocation } from './services/learnerEngine';
-import { getSubscriptionState } from './services/subscriptionService';
+import { getSubscriptionState, refreshSubscriptionState } from './services/subscriptionService';
+import { apiFetch } from './services/apiConfig';
 
 export default function App() {
   const [viewMode, setViewMode] = useState('desktop'); // 'desktop' | 'mobile' | 'responsive'
@@ -76,6 +77,11 @@ export default function App() {
     } catch {}
   }, []);
 
+  // Server is the source of truth for Pro status; refresh the local cache on load.
+  useEffect(() => {
+    refreshSubscriptionState().then(setSubState);
+  }, []);
+
   const handleOpenPaywall = (feature = null) => {
     setPaywallFeature(feature);
     setIsPaywallOpen(true);
@@ -86,14 +92,13 @@ export default function App() {
   };
 
   // Driver Passport Logged Hours
-  const [loggedHours, setLoggedHours] = useState(18);
+  const [loggedHours, setLoggedHours] = useState(0);
 
   // Sync initial logged hours from backend
   useEffect(() => {
-    fetch('/api/passport')
-      .then(res => res.json())
+    apiFetch('/api/passport')
       .then(data => {
-        if (data?.loggedHours) setLoggedHours(data.loggedHours);
+        if (typeof data?.loggedHours === 'number') setLoggedHours(data.loggedHours);
       })
       .catch(() => {});
   }, []);
@@ -180,7 +185,7 @@ export default function App() {
     setIs3D(true);
     setActiveStepIndex(0);
     setIsPlaying(true);
-    siriVoice.speak(`Official DMV Examination started. First task: ${dmvRoute.checkpoints[0].instruction}`, true);
+    siriVoice.speak(`Practice road test started. First task: ${dmvRoute.checkpoints[0].instruction}`, true);
   };
 
   // Handle Request Directions
@@ -231,11 +236,8 @@ export default function App() {
     setLoggedHours(prev => prev + 1);
     siriVoice.speak("Practice hour logged! Check your passport for new milestone badges.");
     try {
-      await fetch('/api/passport/log', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hours: 1 })
-      });
+      const data = await apiFetch('/api/passport/log', { method: 'POST', body: { hours: 1 } });
+      if (typeof data?.passport?.loggedHours === 'number') setLoggedHours(data.passport.loggedHours);
     } catch {
       // Offline fallback: state already incremented locally
     }

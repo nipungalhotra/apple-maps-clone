@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiFetch } from '../services/apiConfig';
 import {
   X, Check, Star, ShieldCheck, Calendar, Clock, MapPin, Phone,
   Car, Award, ChevronRight, CheckCircle2, User, FileText, Send, Sparkles
@@ -13,13 +14,13 @@ export default function InstructorBookingModal({
   const [step, setStep] = useState('package'); // 'package' | 'details' | 'success'
   const [selectedPackage, setSelectedPackage] = useState(instructor?.pricingPackages[0] || null);
   const [meetingType, setMeetingType] = useState('ground'); // 'ground' | 'home'
-  const [studentName, setStudentName] = useState('Alex Rivera');
-  const [studentPhone, setStudentPhone] = useState('(415) 555-0198');
-  const [studentPermit, setStudentPermit] = useState('DL-948201-CA');
+  const [studentName, setStudentName] = useState('');
+  const [studentPhone, setStudentPhone] = useState('');
   const [studentNotes, setStudentNotes] = useState('');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(instructor?.nextSlot || 'Today at 3:30 PM');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingConfirmation, setBookingConfirmation] = useState(null);
+  const [bookingError, setBookingError] = useState('');
 
   if (!isOpen || !instructor) return null;
 
@@ -28,6 +29,7 @@ export default function InstructorBookingModal({
   const handleConfirmBooking = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setBookingError('');
 
     const bookingPayload = {
       instructorId: instructor.id,
@@ -36,29 +38,23 @@ export default function InstructorBookingModal({
       packageId: currentPackage.id,
       packageName: currentPackage.name,
       price: currentPackage.price,
-      referralFeeEarned: 25.00, // $25 referral fee from driving school partner
       studentName,
       studentPhone,
-      studentPermit,
       meetingLocation: meetingType === 'ground' ? initialGroundName : 'Home Pick-up',
       timeSlot: selectedTimeSlot,
       notes: studentNotes
     };
 
     try {
-      const res = await fetch('/api/instructors/book', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bookingPayload)
-      });
-      const data = await res.json();
-      setBookingConfirmation(data.booking || bookingPayload);
-    } catch {
-      setBookingConfirmation(bookingPayload);
+      const data = await apiFetch('/api/instructors/book', { method: 'POST', body: bookingPayload });
+      setBookingConfirmation({ ...bookingPayload, ...(data.booking || {}) });
+      setStep('success');
+    } catch (err) {
+      // Never show a confirmation unless the server actually accepted the request.
+      setBookingError(err?.message || 'Could not send your booking request. Please check your connection and try again.');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(false);
-    setStep('success');
   };
 
   return (
@@ -286,6 +282,12 @@ export default function InstructorBookingModal({
                 />
               </div>
 
+              {bookingError && (
+                <p role="alert" className="text-xs font-semibold text-red-600 dark:text-red-400 bg-red-500/10 rounded-xl px-3 py-2">
+                  {bookingError}
+                </p>
+              )}
+
               {/* Submit Button */}
               <button
                 type="submit"
@@ -293,11 +295,11 @@ export default function InstructorBookingModal({
                 className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-95 text-white font-black text-xs rounded-2xl shadow-lg flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50"
               >
                 {isSubmitting ? (
-                  <span>Dispatching Booking Lead...</span>
+                  <span>Sending Request...</span>
                 ) : (
                   <>
                     <Send className="w-3.5 h-3.5 fill-white" />
-                    <span>Confirm Lesson (${currentPackage.price}) • Pay Instructor In-Person</span>
+                    <span>Request Lesson (${currentPackage.price}) • Pay Instructor In-Person</span>
                   </>
                 )}
               </button>
@@ -317,13 +319,13 @@ export default function InstructorBookingModal({
 
               <div>
                 <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600">
-                  Lesson Confirmed
+                  Request Received
                 </span>
                 <h3 className="text-xl font-black text-zinc-900 dark:text-zinc-100 mt-1">
-                  Instructor Dispatched!
+                  Booking Request Sent
                 </h3>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-sm mx-auto mt-1">
-                  {instructor.name} will meet you at <strong>{bookingConfirmation.meetingLocation}</strong> on <strong>{bookingConfirmation.timeSlot}</strong> in a dual-brake car.
+                  Your request for <strong>{bookingConfirmation.timeSlot}</strong> at <strong>{bookingConfirmation.meetingLocation}</strong> was sent. {instructor.name} must confirm before the lesson is booked.
                 </p>
               </div>
 

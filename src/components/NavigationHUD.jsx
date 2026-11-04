@@ -91,7 +91,7 @@ export default function NavigationHUD({
             {/* Siri Voice Guidance Toggle */}
             <button
               onClick={toggleVoice}
-              title={isVoiceEnabled ? 'Siri Voice Guidance Active' : 'Siri Voice Muted'}
+              title={isVoiceEnabled ? 'Voice Guidance Active' : 'Voice Guidance Muted'}
               className={`p-1.5 rounded-full transition-colors ${
                 isVoiceEnabled
                   ? 'bg-emerald-500 text-white hover:bg-emerald-400'

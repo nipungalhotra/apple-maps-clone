@@ -57,7 +57,7 @@ export default function DMVTestSimulator({
           </div>
           <div>
             <h4 className="text-xs font-black text-zinc-900 dark:text-zinc-100 uppercase tracking-wide flex items-center gap-1.5">
-              Official DMV Test Simulator
+              Practice Road Test Simulator
               {!isPro && (
                 <span className="text-[9px] font-bold text-amber-600 bg-amber-500/15 px-1.5 py-0.2 rounded-full">
                   PREVIEW MODE

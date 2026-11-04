@@ -86,7 +86,7 @@ export default function OnboardingGuideModal({
     {
       id: 'step-3',
       tag: 'Step 3 • DMV Simulation',
-      title: 'Drive Your Official DMV Road Test Route',
+      title: 'Practice a Sample Road Test Route',
       subtitle: 'Examiner audio scoring, turn maneuvers, & critical checklist.',
       color: 'from-blue-600 to-indigo-700',
       badgeColor: 'bg-blue-500/20 text-blue-300',
@@ -107,7 +107,7 @@ export default function OnboardingGuideModal({
               🎙️
             </div>
             <div>
-              <span className="text-[9px] font-bold uppercase text-zinc-400 block">Siri Examiner Audio</span>
+              <span className="text-[9px] font-bold uppercase text-zinc-400 block">Voice Examiner Audio</span>
               <p className="text-[11px] text-white italic">"Check mirrors, signal right, and stop before the white limit line."</p>
             </div>
           </div>
@@ -119,21 +119,21 @@ export default function OnboardingGuideModal({
           </div>
         </div>
       ),
-      description: 'Rehearse the exact turn-by-turn route used by your local DMV licensing office. Siri speaks examiner instructions live over your car speakers, grading you as you drive.'
+      description: 'Rehearse a sample road-test route modeled on common examiner maneuvers. Voice prompts read examiner instructions aloud while you practice.'
     },
     {
       id: 'step-4',
-      tag: 'Step 4 • Certified Log',
-      title: 'Export Official DMV 50-Hour Driving Log',
-      subtitle: 'Instant State Form DL-50HRS PDF with supervisor sign-off lines.',
+      tag: 'Step 4 • Practice Log',
+      title: 'Print Your 50-Hour Practice Log',
+      subtitle: 'Printable practice-log worksheet with supervisor sign-off lines.',
       color: 'from-amber-600 to-orange-700',
       badgeColor: 'bg-amber-500/20 text-amber-300',
       illustration: (
         <div className="relative w-full h-44 bg-zinc-900 rounded-2xl overflow-hidden border border-amber-500/30 p-3.5 flex flex-col justify-between">
           <div className="flex items-start justify-between">
             <div>
-              <span className="text-[10px] font-black uppercase text-amber-400">STATE FORM DL-50HRS</span>
-              <h4 className="text-sm font-black text-white">Supervised Driving Certification</h4>
+              <span className="text-[10px] font-black uppercase text-amber-400">PRACTICE LOG WORKSHEET</span>
+              <h4 className="text-sm font-black text-white">Supervised Practice Record</h4>
             </div>
             <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center font-bold shadow-md">
               <FileText className="w-4 h-4" />
@@ -161,7 +161,7 @@ export default function OnboardingGuideModal({
           </div>
         </div>
       ),
-      description: 'Track your mandatory 50 practice hours with 1 tap. Generate a printable, certified PDF logbook formatted to official DMV state guidelines to hand directly to your examiner.'
+      description: 'Track your mandatory 50 practice hours with 1 tap. Print a practice-log worksheet to help you complete your state\'s official form.'
     }
   ];
 

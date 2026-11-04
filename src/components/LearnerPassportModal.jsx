@@ -122,7 +122,7 @@ export default function LearnerPassportModal({
             </div>
           </div>
 
-          {/* PRO BENEFIT: Official DMV-Certified 50-Hour Practice Log (PDF) */}
+          {/* PRO BENEFIT: Printable practice log worksheet */}
           <div className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 border border-blue-500/20 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-md">
@@ -130,7 +130,7 @@ export default function LearnerPassportModal({
               </div>
               <div>
                 <h4 className="text-xs font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-1">
-                  DMV-Certified 50-Hr Log (PDF)
+                  Printable Practice Log (PDF)
                   {!isPro && (
                     <span className="text-[9px] font-bold text-amber-600 bg-amber-500/20 px-1.5 py-0.2 rounded-full">
                       PRO
@@ -138,7 +138,7 @@ export default function LearnerPassportModal({
                   )}
                 </h4>
                 <p className="text-[10px] text-zinc-400">
-                  {isPro ? 'State DL-50HRS form ready to print' : 'Unlock printable examiner-ready sheet'}
+                  {isPro ? 'Personal worksheet ready to print' : 'Unlock printable practice worksheet'}
                 </p>
               </div>
             </div>

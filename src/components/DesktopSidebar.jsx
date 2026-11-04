@@ -112,7 +112,7 @@ export default function DesktopSidebar({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search Apple Maps"
+              placeholder="Search places"
               className="w-full pl-9 pr-8 py-2 text-sm bg-black/5 dark:bg-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-apple-blue/50 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 font-medium"
             />
             {searchQuery && (

@@ -15,21 +15,30 @@ export default function LearnerProPaywallModal({
   const [selectedPlan, setSelectedPlan] = useState('lifetime'); // 'lifetime' | 'monthly'
   const [isProcessing, setIsProcessing] = useState(false);
   const [successToast, setSuccessToast] = useState(false);
+  const [upgradeError, setUpgradeError] = useState('');
 
   if (!isOpen) return null;
 
   const handleUpgrade = async (planToUse = selectedPlan) => {
     setIsProcessing(true);
-    setTimeout(async () => {
+    setUpgradeError('');
+    try {
       const state = await upgradeToPro(planToUse);
-      setIsProcessing(false);
       setSuccessToast(true);
       if (onSubscriptionChange) onSubscriptionChange(state);
       setTimeout(() => {
         setSuccessToast(false);
         onClose();
       }, 1200);
-    }, 700);
+    } catch (err) {
+      setUpgradeError(
+        err?.status === 501
+          ? 'Purchases are not available yet. Please check back soon.'
+          : (err?.message || 'Upgrade failed. Please try again.')
+      );
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleDowngrade = async () => {
@@ -68,7 +77,7 @@ export default function LearnerProPaywallModal({
     {
       feature: 'Learner Passport',
       free: 'Manual counter',
-      pro: 'Printable DMV-Certified 50-Hour Practice Log (PDF)',
+      pro: 'Printable 50-Hour Practice Log Worksheet (PDF)',
       highlight: highlightFeature === 'pdf'
     },
     {
@@ -108,7 +117,7 @@ export default function LearnerProPaywallModal({
             Pass Your DMV Test On The First Try.
           </h2>
           <p className="text-xs sm:text-sm text-white/90 mt-1 max-w-md">
-            Unlock unlimited empty parking grounds, interactive examiner audio tests, virtual cones, and the certified 50-hour state logbook.
+            Unlock unlimited empty parking grounds, interactive examiner audio tests, virtual cones, and the printable 50-hour practice log.
           </p>
         </div>
 
@@ -217,15 +226,11 @@ export default function LearnerProPaywallModal({
               )}
             </button>
 
-            {/* Apple Pay Button representation */}
-            <button
-              onClick={() => handleUpgrade(selectedPlan)}
-              disabled={isProcessing}
-              className="w-full py-3 bg-black dark:bg-white text-white dark:text-black font-semibold text-xs rounded-2xl flex items-center justify-center gap-1.5 shadow-md hover:opacity-90 transition-all active:scale-[0.98]"
-            >
-              <span>Pay with</span>
-              <span className="font-bold text-sm tracking-tight">Pay</span>
-            </button>
+            {upgradeError && (
+              <p role="alert" className="text-xs font-semibold text-center text-red-600 dark:text-red-400 bg-red-500/10 rounded-xl px-3 py-2">
+                {upgradeError}
+              </p>
+            )}
           </div>
 
           {/* Guarantees & Developer Quick Toggle */}
@@ -266,7 +271,7 @@ export default function LearnerProPaywallModal({
             </div>
             <h3 className="text-xl font-black">Learner PRO Activated!</h3>
             <p className="text-xs text-white/90 mt-1">
-              All 5 km practice grounds, custom cones, DMV voice examiner, and certified PDF logbook unlocked.
+              All 5 km practice grounds, custom cones, DMV voice examiner, and printable practice log unlocked.
             </p>
           </div>
         )}

@@ -1,4 +1,4 @@
-package com.applemap.learner;
+package com.roadready.app;
 
 import com.getcapacitor.BridgeActivity;
 
