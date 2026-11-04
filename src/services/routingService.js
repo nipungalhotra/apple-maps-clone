@@ -118,3 +118,51 @@ export function calculateETA(seconds) {
   const date = new Date(Date.now() + seconds * 1000);
   return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
+
+function haversineMeters([lng1, lat1], [lng2, lat2]) {
+  const R = 6371000;
+  const toRad = (d) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+/**
+ * Maps a position along the route geometry (an index into routeData.coordinates)
+ * to the index of the maneuver step the driver is currently on.
+ *
+ * The simulated GPS advances one coordinate at a time, but a route has far fewer
+ * maneuver steps than coordinates, so the two indexes must not be confused.
+ * We measure the fraction of the route driven so far and find the step whose
+ * cumulative distance covers that fraction.
+ */
+export function getStepIndexForCoordinate(routeData, coordIndex) {
+  const steps = routeData?.steps || [];
+  const coords = routeData?.coordinates || [];
+  if (steps.length <= 1 || coords.length < 2) return 0;
+
+  const idx = Math.max(0, Math.min(coords.length - 1, Math.floor(coordIndex) || 0));
+  if (idx >= coords.length - 1) return steps.length - 1;
+
+  let travelled = 0;
+  let total = 0;
+  for (let i = 1; i < coords.length; i++) {
+    const seg = haversineMeters(coords[i - 1], coords[i]);
+    total += seg;
+    if (i <= idx) travelled += seg;
+  }
+  const progress = total > 0 ? travelled / total : idx / (coords.length - 1);
+
+  const stepTotal = steps.reduce((sum, st) => sum + (Number(st.distance) || 0), 0);
+  if (stepTotal <= 0) {
+    return Math.min(steps.length - 1, Math.floor(progress * steps.length));
+  }
+
+  let cumulative = 0;
+  for (let i = 0; i < steps.length; i++) {
+    cumulative += (Number(steps[i].distance) || 0) / stepTotal;
+    if (progress < cumulative) return i;
+  }
+  return steps.length - 1;
+}

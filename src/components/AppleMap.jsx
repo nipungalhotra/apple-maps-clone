@@ -114,7 +114,8 @@ export default function AppleMap({
         zoom: safeZoom,
         pitch: safePitch,
         bearing: safeBearing,
-        attributionControl: false
+        // OpenStreetMap / CARTO licences require visible attribution.
+        attributionControl: { compact: true }
       });
     } catch (err) {
       console.warn('MapLibre primary initialization fallback triggered:', err);
@@ -125,7 +126,8 @@ export default function AppleMap({
         zoom: safeZoom,
         pitch: safePitch,
         bearing: safeBearing,
-        attributionControl: false
+        // OpenStreetMap / CARTO licences require visible attribution.
+        attributionControl: { compact: true }
       });
     }
 

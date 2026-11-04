@@ -38,6 +38,12 @@ RoadReady works as a polished **demo/prototype**. It is not a production product
 
 ✅ **Background location and plain-HTTP settings from `main` removed:** iOS `NSAllowsArbitraryLoads`, `UIBackgroundModes: location` and `NSLocationAlwaysUsageDescription`, plus Android `usesCleartextTraffic` and the background/foreground-service location permissions. The app only reads location while it is open. `NSLocationAlwaysAndWhenInUseUsageDescription` stays, because `@capacitor/geolocation` requires it; it uses the same while-in-use wording, and the prompt is never shown. `NSAllowsLocalNetworking` stays so local dev live-reload keeps working.
 
+✅ **P1 fixes:**
+- **Navigation HUD index mismatch** is fixed. The simulated GPS position is now converted to the current maneuver step by distance driven (`getStepIndexForCoordinate`), so turn instructions and voice prompts move through the steps. The footer reads "Step X of N".
+- **Synthetic practice grounds outside SF** are removed. Outside the curated San Francisco area the app now shows "No verified practice grounds here yet" instead of placing made-up grounds at fixed GPS offsets.
+- **Map attribution** is restored (compact "© OpenStreetMap contributors © CARTO").
+- **Lead export exposure and `npm audit`** were already fixed with the P0 work.
+
 Also hardened: input validation and length limits, a per-IP rate limit on writes, JSON body limit (16 KB), atomic file writes, CORS allowlist (`CORS_ORIGINS`), basic security headers, generic error responses, a JSON 404 for unknown `/api` routes, graceful shutdown, `server/storage/` removed from git, Capacitor `cleartext` off, and the duplicate CDN MapLibre CSS removed.
 
 ---

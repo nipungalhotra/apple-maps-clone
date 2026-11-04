@@ -385,6 +385,13 @@ export default function LearnerModePanel({
               </span>
             </div>
 
+            {zones.length === 0 && (
+              <div className="p-4 rounded-2xl border border-dashed border-black/10 dark:border-white/10 text-xs text-zinc-600 dark:text-zinc-400">
+                <p className="font-bold text-zinc-800 dark:text-zinc-200 mb-1">No verified practice grounds here yet</p>
+                <p>RoadReady currently lists hand-checked grounds in the San Francisco area only. Choose an empty lot you have permission to use, and always practice with a licensed supervising driver.</p>
+              </div>
+            )}
+
             {zones.map((zone, idx) => {
               const isSelected = selectedLearnerZone?.id === zone.id;
               const isLocked = !canAccessZone(idx, isPro);

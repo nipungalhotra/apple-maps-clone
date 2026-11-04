@@ -4,7 +4,7 @@ import {
   X, Volume2, VolumeX, FastForward, Play, Pause, Navigation,
   CloudRain, AlertTriangle
 } from 'lucide-react';
-import { formatDistance, formatDuration, calculateETA } from '../services/routingService';
+import { formatDistance, formatDuration, calculateETA, getStepIndexForCoordinate } from '../services/routingService';
 import { siriVoice } from '../services/voiceService';
 import { WEATHER_CONDITIONS } from '../services/weatherSafetyService';
 
@@ -22,8 +22,11 @@ export default function NavigationHUD({
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
 
   const steps = routeData?.steps || [];
-  const currentStep = steps[activeStepIndex] || steps[0];
-  const nextStep = steps[activeStepIndex + 1];
+  // activeStepIndex is the simulated GPS position (an index into routeData.coordinates),
+  // not a maneuver index, so derive which maneuver step the driver is on.
+  const maneuverIndex = getStepIndexForCoordinate(routeData, activeStepIndex);
+  const currentStep = steps[maneuverIndex] || steps[0];
+  const nextStep = steps[maneuverIndex + 1];
 
   const weather = WEATHER_CONDITIONS[weatherMode] || WEATHER_CONDITIONS.clear;
 
@@ -34,7 +37,7 @@ export default function NavigationHUD({
       const textToSpeak = `In ${distanceText}, ${currentStep.instruction}`;
       siriVoice.speak(textToSpeak, false);
     }
-  }, [activeStepIndex, isVoiceEnabled]);
+  }, [maneuverIndex, isVoiceEnabled]);
 
   const toggleVoice = () => {
     const nextState = !isVoiceEnabled;
@@ -172,7 +175,7 @@ export default function NavigationHUD({
           </div>
 
           <span className="text-[11px] text-zinc-400">
-            Waypoint {activeStepIndex + 1} of {routeData?.coordinates?.length || 1}
+            Step {Math.min(maneuverIndex + 1, steps.length || 1)} of {steps.length || 1}
           </span>
         </div>
       </div>
