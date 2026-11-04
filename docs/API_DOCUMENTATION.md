@@ -9,7 +9,8 @@ RoadReady provides a production-hardened Express 5 REST API powering real-time n
 - **Security Headers:** Enforced via `helmet` with Content Security Policy tuned for MapLibre GL WebGL shaders and CartoDB vector basemaps.
 - **Global Rate Limiting:** 300 requests per 15-minute sliding window per client IP on `/api/*`.
 - **Write Mutation Rate Limiting:** 60 mutation requests per 15-minute window on `POST` endpoints.
-- **Payload Sanitization:** JSON body parser restricted to `100kb` with strict string truncation and type validation.
+- **Payload Sanitization:** JSON body parser restricted to `16kb` with strict length limits and type validation.
+- **Identity:** Signed-in callers send `Authorization: Bearer <Supabase access token>`; guests send `X-Client-Id: <random device id>`. Passport and subscription endpoints need one of the two. See [Accounts and database](ACCOUNTS_AND_DATABASE.md).
 
 ---
 
@@ -85,7 +86,7 @@ Returns real-time congestion flow vectors and dynamic road incidents (constructi
 ---
 
 ### 3. Learner Passport & Hours Verification
-Retrieves the student driver's progress toward mandatory State Form DL-50HRS certification.
+Retrieves the caller's logged practice hours, badges and recent sessions (a personal record, not an official log).
 
 - **Method:** `GET`
 - **Route:** `/api/passport`
@@ -103,7 +104,7 @@ Retrieves the student driver's progress toward mandatory State Form DL-50HRS cer
 ---
 
 ### 4. Log Practice Hour
-Increments certified driving hours and checks for milestone badge unlocks.
+Logs a practice session and returns the updated totals and badges.
 
 - **Method:** `POST`
 - **Route:** `/api/passport/log`
@@ -162,15 +163,14 @@ Submits an in-field surface and gate condition report.
 ---
 
 ### 7. Subscription Checkout & Verification
-Simulates B2C Pro Pass license activation and verifies feature entitlement.
+Simulated Pro activation for development. Requires a signed-in account (`401` with `code: "sign_in_required"` otherwise) and returns `501` in production until real payments are added. The price is set by the server.
 
 - **Method:** `POST`
 - **Route:** `/api/subscription/upgrade`
 - **Request Body:**
 ```json
 {
-  "tier": "lifetime",
-  "price": 29.99
+  "tier": "lifetime"
 }
 ```
 - **Response:** `200 OK`
@@ -182,10 +182,21 @@ Simulates B2C Pro Pass license activation and verifies feature entitlement.
     "tier": "lifetime",
     "price": 29.99,
     "unlockedAt": "2026-10-22T21:50:00.000Z",
-    "transactionId": "TXN-MAPS-1792695000000"
+    "expiresAt": null,
+    "transactionId": "SIM-6f1c…",
+    "simulated": true
   }
 }
 ```
+
+### 8. Account
+Requires `Authorization: Bearer <token>`.
+
+| Method | Route | What it does |
+|---|---|---|
+| `GET` | `/api/account` | Returns `{ id, email, createdAt }` for the signed-in user |
+| `POST` | `/api/account/claim` | Moves this device's guest data (`X-Client-Id`) into the account. Safe to repeat |
+| `DELETE` | `/api/account` | Permanently deletes the account's hours, plan, reports, booking requests and login |
 
 ---
 

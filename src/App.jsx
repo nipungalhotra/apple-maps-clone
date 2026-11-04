@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import AppleMap from './components/AppleMap';
 import MapErrorBoundary from './components/MapErrorBoundary';
 import DesktopSidebar from './components/DesktopSidebar';
@@ -8,6 +8,7 @@ import DeviceModeBar from './components/DeviceModeBar';
 
 const LearnerProPaywallModal = lazy(() => import('./components/LearnerProPaywallModal'));
 const OnboardingGuideModal = lazy(() => import('./components/OnboardingGuideModal'));
+const AccountModal = lazy(() => import('./components/AccountModal'));
 import { PRESET_PLACES } from './data/presetPlaces';
 import { LEARNER_ZONES } from './data/learnerZones';
 import { CONE_PRESETS } from './data/conePresets';
@@ -16,8 +17,9 @@ import { searchLocations } from './services/searchService';
 import { calculateRoute } from './services/routingService';
 import { siriVoice } from './services/voiceService';
 import { generateLearnerZonesForLocation } from './services/learnerEngine';
-import { getSubscriptionState, refreshSubscriptionState } from './services/subscriptionService';
-import { apiFetch } from './services/apiConfig';
+import { getSubscriptionState, refreshSubscriptionState, clearSubscriptionCache } from './services/subscriptionService';
+import { accountsEnabled, getCurrentUser, onAuthChange } from './services/authService';
+import { apiFetch, resetClientId } from './services/apiConfig';
 
 export default function App() {
   const [viewMode, setViewMode] = useState('desktop'); // 'desktop' | 'mobile' | 'responsive'
@@ -100,10 +102,18 @@ export default function App() {
     } catch {}
   }, []);
 
-  // Server is the source of truth for Pro status; refresh the local cache on load.
-  useEffect(() => {
-    refreshSubscriptionState().then(setSubState);
-  }, []);
+  // Accounts (Supabase Auth). Guests can use the app; signing in keeps data across devices.
+  const [authUser, setAuthUser] = useState(null);
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const [accountMode, setAccountMode] = useState('signIn');
+  const [accountNotice, setAccountNotice] = useState('');
+  const claimedForUser = useRef(null);
+
+  const openAccount = (mode = 'signIn', notice = '') => {
+    setAccountMode(mode);
+    setAccountNotice(notice);
+    setIsAccountOpen(true);
+  };
 
   const handleOpenPaywall = (feature = null) => {
     setPaywallFeature(feature);
@@ -117,14 +127,59 @@ export default function App() {
   // Driver Passport Logged Hours
   const [loggedHours, setLoggedHours] = useState(0);
 
-  // Sync initial logged hours from backend
-  useEffect(() => {
-    apiFetch('/api/passport')
+  const refreshPassport = useCallback(() => {
+    return apiFetch('/api/passport')
       .then(data => {
         if (typeof data?.loggedHours === 'number') setLoggedHours(data.loggedHours);
       })
       .catch(() => {});
   }, []);
+
+  // Server is the source of truth for hours and Pro status: load them for whoever is
+  // using the app (account or guest device), now and whenever that changes.
+  const refreshUserData = useCallback(() => {
+    refreshPassport();
+    refreshSubscriptionState().then(setSubState);
+  }, [refreshPassport]);
+
+  useEffect(() => {
+    let cancelled = false;
+    getCurrentUser()
+      .then(user => { if (!cancelled) setAuthUser(user); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) refreshUserData(); });
+
+    const unsubscribe = onAuthChange(async (event, user) => {
+      if (cancelled) return;
+      setAuthUser(user);
+      // SIGNED_IN: fresh sign-in. INITIAL_SESSION: session restored at startup (retries a claim
+      // that failed earlier, e.g. offline). Claiming is safe to repeat; it moves nothing twice.
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && user && claimedForUser.current !== user.id) {
+        claimedForUser.current = user.id;
+        try {
+          // Keep hours logged as a guest on this device by moving them into the account.
+          await apiFetch('/api/account/claim', { method: 'POST', body: {} });
+        } catch {
+          // Not fatal: the guest data stays on this device and can be claimed next sign-in.
+          claimedForUser.current = null;
+        }
+        refreshUserData();
+      } else if (event === 'SIGNED_OUT') {
+        claimedForUser.current = null;
+        // Start a fresh guest identity so the next person on this device begins empty.
+        resetClientId();
+        setSubState(clearSubscriptionCache());
+        setLoggedHours(0);
+        refreshUserData();
+      } else if (event === 'PASSWORD_RECOVERY') {
+        openAccount('newPassword');
+      }
+    });
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [refreshUserData]);
 
   // Active Navigation State
   const [routeData, setRouteData] = useState(null);
@@ -370,6 +425,9 @@ export default function App() {
         onOpenPaywall={handleOpenPaywall}
         onOpenGuide={() => setIsOnboardingOpen(true)}
         isOffline={isOffline}
+        accountsEnabled={accountsEnabled}
+        accountEmail={authUser?.email || ''}
+        onOpenAccount={() => openAccount('signIn')}
       />
 
       {/* NAVIGATION ACTIVE HUD */}
@@ -524,6 +582,22 @@ export default function App() {
           isPro={isPro}
           onSubscriptionChange={handleSubscriptionChange}
           highlightFeature={paywallFeature}
+          onRequireSignIn={() => {
+            setIsPaywallOpen(false);
+            openAccount('signUp', 'Create a free account first, so your purchase can be restored on any device.');
+          }}
+        />
+
+        <AccountModal
+          isOpen={isAccountOpen}
+          onClose={() => setIsAccountOpen(false)}
+          user={authUser}
+          initialMode={accountMode}
+          notice={accountNotice}
+          onAccountDeleted={() => {
+            setSubState(clearSubscriptionCache());
+            setLoggedHours(0);
+          }}
         />
 
         {/* Visual Onboarding & How-It-Works Guide Modal */}

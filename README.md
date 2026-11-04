@@ -41,17 +41,17 @@
 - **Dynamic Weather Braking:** Real-time wet asphalt stopping distance telemetry and safety alerts.
 
 ### 🎖️ DMV Road Test Simulator
-- **Official Examiner Routes:** Turn-by-turn navigation along official DMV test paths.
-- **Siri Voice Guidance:** Live spoken examiner instructions and evaluation checkpoints.
+- **Practice Test Routes:** Turn-by-turn navigation along routes modelled on typical DMV road tests (not official DMV routes).
+- **Voice Guidance:** Spoken examiner-style instructions and evaluation checkpoints.
 - **Road Test Scoring:** Live point-deduction tracking against state passing thresholds.
 
-### 📄 Certified 50-Hour Driving Log (PDF)
-- **State Form DL-50HRS Compliant:** Tracks mandatory daytime (40h) and nighttime (10h) practice hours.
-- **Printable Export:** 1-tap print and PDF export with supervising driver affidavits and DMV examiner verification stamp box.
+### 📄 Personal 50-Hour Practice Log
+- **Practice Hour Tracking:** Tracks total, night and highway practice hours. Synced to your account when signed in.
+- **Printable Worksheet:** A personal worksheet to help fill in your state's official supervised-driving form. It is not an official or certified DMV document.
 
 ### 👨‍🏫 1-on-1 Driving Coach Marketplace
-- **Verified Local Instructors:** Connect with certified behind-the-wheel instructors providing dual-control vehicles.
-- **3-Step In-App Booking:** Package selection, practice ground meeting location, and instant confirmation voucher.
+- **Local Instructors:** Browse behind-the-wheel instructors (sample listings for now).
+- **Booking Requests:** Package selection and meeting location; the instructor must confirm (instructor notifications are not built yet).
 
 ---
 
@@ -76,10 +76,11 @@ RoadReady's target market dynamics, multi-sided stakeholder incentives, and pric
 ## 🛠️ Tech Stack
 
 - **Frontend:** React 18, Vite 6, Tailwind CSS
-- **Map & Spatial Rendering:** MapLibre GL 5 (3D building extrusions & vector layers)
+- **Map & Spatial Rendering:** MapLibre GL 6 (3D building extrusions & vector layers)
 - **Icons:** Lucide React
 - **Voice Synthesis:** Web Speech API (`speechSynthesis`)
-- **Backend API:** Node.js, Express 5, CORS, File Persistence
+- **Backend API:** Node.js, Express 5, Postgres (`pg`; embedded PGlite for local dev and tests)
+- **Accounts:** Supabase Auth (email + password), verified server-side with `jose`
 - **Native Mobile:** Capacitor 8 (Android & iOS native projects)
 
 ---
@@ -116,11 +117,14 @@ npm run dev      # Runs Vite on http://127.0.0.1:3000
 npm run server   # Runs API on http://127.0.0.1:3001
 
 # 4. Run Automated Test Suite (Vitest + Supertest)
-npm test         # Runs 12 unit and integration tests
+npm test         # Unit and API tests (uses an in-memory database)
 
 # 5. Production Build
 npm run build    # Compiles production assets into /dist
 ```
+
+Local development needs no database setup: the API uses an embedded Postgres stored in `server/storage/pglite`.
+Accounts are off until you add Supabase settings; see **[Accounts and database](docs/ACCOUNTS_AND_DATABASE.md)**.
 
 ---
 

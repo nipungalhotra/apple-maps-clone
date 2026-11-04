@@ -1,16 +1,16 @@
 import express from 'express';
 import crypto from 'crypto';
 import { writeLimiter } from '../middleware/security.js';
-import { storagePath, readJson, writeJson, cleanString, sendServerError } from '../lib/storage.js';
+import { query } from '../db/index.js';
+import { cleanString, sendServerError } from '../lib/validation.js';
 
-const INSURANCE_CLICKS_FILE = storagePath('insurance_clicks.json');
 // Token required to read affiliate lead data. Unset = endpoint disabled.
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || '';
 
 const router = express.Router();
 
-// Track insurance quote click
-router.post('/insurance-click', writeLimiter, (req, res) => {
+// Track insurance quote click. Not linked to any account or device.
+router.post('/insurance-click', writeLimiter, async (req, res) => {
   try {
     const body = req.body || {};
     const partnerId = cleanString(body.partnerId, { max: 60, required: true });
@@ -20,28 +20,21 @@ router.post('/insurance-click', writeLimiter, (req, res) => {
     }
     const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 
-    const clicks = readJson(INSURANCE_CLICKS_FILE, []);
-    const record = {
-      id: `aff-click-${crypto.randomUUID()}`,
-      partnerId,
-      partnerName,
-      estimatedSavings: num(body.estimatedSavings),
-      driverAge: num(body.driverAge),
-      loggedHours: num(body.loggedHours),
-      timestamp: new Date().toISOString()
-    };
-
-    const next = [record, ...(Array.isArray(clicks) ? clicks : [])].slice(0, 10_000);
-    writeJson(INSURANCE_CLICKS_FILE, next);
+    const id = crypto.randomUUID();
+    await query(
+      `INSERT INTO roadready.insurance_clicks (id, partner_id, partner_name, estimated_savings, driver_age, logged_hours)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [id, partnerId, partnerName, num(body.estimatedSavings), num(body.driverAge), num(body.loggedHours)]
+    );
     // Do not echo totals or other users' data back to the client.
-    res.status(201).json({ success: true, id: record.id });
+    res.status(201).json({ success: true, id });
   } catch (err) {
     sendServerError(res, 'Failed to track insurance affiliate click', err);
   }
 });
 
 // Admin-only: lead data is not public.
-router.get('/insurance-clicks', (req, res) => {
+router.get('/insurance-clicks', async (req, res) => {
   const auth = req.get('Authorization') || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
   const valid = ADMIN_TOKEN && token.length === ADMIN_TOKEN.length &&
@@ -49,7 +42,22 @@ router.get('/insurance-clicks', (req, res) => {
   if (!valid) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
-  res.json(readJson(INSURANCE_CLICKS_FILE, []));
+  try {
+    const { rows } = await query(
+      'SELECT * FROM roadready.insurance_clicks ORDER BY created_at DESC LIMIT 1000'
+    );
+    res.json(rows.map((r) => ({
+      id: r.id,
+      partnerId: r.partner_id,
+      partnerName: r.partner_name,
+      estimatedSavings: r.estimated_savings,
+      driverAge: r.driver_age,
+      loggedHours: r.logged_hours,
+      timestamp: new Date(r.created_at).toISOString()
+    })));
+  } catch (err) {
+    sendServerError(res, 'Failed to read insurance clicks', err);
+  }
 });
 
 export default router;

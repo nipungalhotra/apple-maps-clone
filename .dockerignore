@@ -7,4 +7,8 @@ ios
 docs/assets/*.png
 tests
 *.log
+# Local dev data (embedded database, old JSON stores) must never ship in the image
+server/storage
+.env
+.env.*
 .DS_Store

@@ -3,7 +3,7 @@
 
 import { apiFetch } from './apiConfig';
 
-const STORAGE_KEY = 'apple_maps_learner_subscription';
+const STORAGE_KEY = 'roadready_subscription_cache';
 
 export const PRO_FEATURES = {
   UNLIMITED_GROUNDS: 'unlimited_grounds',
@@ -70,7 +70,7 @@ export const downgradeToFree = async () => {
   return newState;
 };
 
-// Re-sync local cache with the server's record for this client.
+// Re-sync local cache with the server's record for the current account (or guest device).
 export const refreshSubscriptionState = async () => {
   try {
     const sub = await apiFetch('/api/subscription');
@@ -82,6 +82,16 @@ export const refreshSubscriptionState = async () => {
     // keep cached state when offline
   }
   return getSubscriptionState();
+};
+
+// Forget the cached plan (e.g. on sign-out) so the next account starts clean.
+export const clearSubscriptionCache = () => {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+  return { ...DEFAULT_STATE };
 };
 
 // Access Control Helpers

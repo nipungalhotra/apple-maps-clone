@@ -1,41 +1,60 @@
 import express from 'express';
 import crypto from 'crypto';
-import fs from 'fs';
 import { writeLimiter } from '../middleware/security.js';
-import { storagePath, readJson, writeJson, toSafeMap, cleanString, sendServerError } from '../lib/storage.js';
+import { identify } from '../lib/auth.js';
+import { query } from '../db/index.js';
+import { cleanString, sendServerError } from '../lib/validation.js';
 
-const REPORTS_FILE = storagePath('reports.json');
 const MAX_REPORTS_PER_ZONE = 50;
+const ZONE_ID_RE = /^[A-Za-z0-9_-]+$/;
 
-const SEED_REPORTS = {
-  'candlestick-open-ground': [
-    { id: 'rep-1', author: 'Marcus V.', createdAt: '2026-01-01T00:00:00.000Z', status: 'Gate Open', surface: 'Dry & Clear', notes: 'Completely empty right now. Only 1 other learner practicing manual.' },
-    { id: 'rep-2', author: 'Elena R.', createdAt: '2026-01-01T00:00:00.000Z', status: 'Gate Open', surface: 'Clean', notes: 'Great breeze. Great for motorcycle counter-steering.' }
-  ],
-  'ccsf-lower-parking': [
-    { id: 'rep-3', author: 'Sarah K.', createdAt: '2026-01-01T00:00:00.000Z', status: 'Open Weekend', surface: 'Paved', notes: 'No campus security. Painted bays make parallel parking super easy.' }
-  ]
-};
-if (!fs.existsSync(REPORTS_FILE)) writeJson(REPORTS_FILE, SEED_REPORTS);
+const toReport = (r) => ({
+  id: r.id,
+  author: r.author,
+  createdAt: new Date(r.created_at).toISOString(),
+  status: r.status,
+  surface: r.surface,
+  notes: r.notes
+});
 
 const router = express.Router();
 
-// Get all reports or for a specific ground
-router.get('/', (req, res) => {
+// Reports for one zone (?zoneId=) or the latest reports for every zone, grouped by zone id.
+router.get('/', async (req, res) => {
   try {
-    const reports = toSafeMap(readJson(REPORTS_FILE, {}));
     const zoneId = typeof req.query.zoneId === 'string' ? req.query.zoneId : null;
     if (zoneId) {
-      return res.json(reports[zoneId] || []);
+      if (!ZONE_ID_RE.test(zoneId) || zoneId.length > 100) return res.json([]);
+      const { rows } = await query(
+        `SELECT * FROM roadready.community_reports WHERE zone_id = $1
+          ORDER BY created_at DESC LIMIT ${MAX_REPORTS_PER_ZONE}`,
+        [zoneId]
+      );
+      return res.json(rows.map(toReport));
     }
-    res.json({ ...reports });
+
+    const { rows } = await query(
+      `SELECT * FROM (
+         SELECT r.*, ROW_NUMBER() OVER (PARTITION BY zone_id ORDER BY created_at DESC) AS rn
+           FROM roadready.community_reports r
+       ) ranked
+       WHERE rn <= ${MAX_REPORTS_PER_ZONE}
+       ORDER BY zone_id, created_at DESC`
+    );
+    // Null-prototype map: zone ids such as "__proto__" cannot pollute Object.prototype.
+    const grouped = Object.create(null);
+    for (const r of rows) {
+      (grouped[r.zone_id] ||= []).push(toReport(r));
+    }
+    res.json({ ...grouped });
   } catch (err) {
     sendServerError(res, 'Failed to read community reports', err);
   }
 });
 
-// Post new ground report (rate-limited & validated)
-router.post('/', writeLimiter, (req, res) => {
+// Post new ground report (rate-limited & validated). Signed-in users are recorded as the
+// owner so their reports are removed if they delete their account.
+router.post('/', writeLimiter, identify, async (req, res) => {
   try {
     const body = req.body || {};
     const zoneId = cleanString(body.zoneId, { max: 100, required: true });
@@ -47,26 +66,21 @@ router.post('/', writeLimiter, (req, res) => {
     if (!zoneId || !notes || author === null || status === null || surface === null) {
       return res.status(400).json({ error: 'zoneId (≤100 chars) and notes (≤500 chars) are required; author/status/surface must be short strings' });
     }
-    if (!/^[A-Za-z0-9_-]+$/.test(zoneId)) {
+    if (!ZONE_ID_RE.test(zoneId)) {
       return res.status(400).json({ error: 'Invalid zoneId' });
     }
 
-    const reports = toSafeMap(readJson(REPORTS_FILE, {}));
-    const list = Array.isArray(reports[zoneId]) ? reports[zoneId] : [];
+    const { rows } = await query(
+      `INSERT INTO roadready.community_reports (id, zone_id, owner_id, author, status, surface, notes)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [crypto.randomUUID(), zoneId, req.ownerId || null, author, status, surface, notes]
+    );
+    const { rows: [{ count }] } = await query(
+      'SELECT LEAST(COUNT(*), $2)::int AS count FROM roadready.community_reports WHERE zone_id = $1',
+      [zoneId, MAX_REPORTS_PER_ZONE]
+    );
 
-    const newEntry = {
-      id: `rep-${crypto.randomUUID()}`,
-      author,
-      createdAt: new Date().toISOString(),
-      status,
-      surface,
-      notes
-    };
-
-    reports[zoneId] = [newEntry, ...list].slice(0, MAX_REPORTS_PER_ZONE);
-    writeJson(REPORTS_FILE, { ...reports });
-
-    res.status(201).json({ success: true, report: newEntry, count: reports[zoneId].length });
+    res.status(201).json({ success: true, report: toReport(rows[0]), count });
   } catch (err) {
     sendServerError(res, 'Failed to save community report', err);
   }

@@ -19,3 +19,15 @@ services:
       # Bearer token for GET /api/affiliates/insurance-clicks (leave unset to disable)
       - key: ADMIN_TOKEN
         sync: false
+      # Postgres connection string (Supabase pooler URI). Required: the server will not start without it.
+      - key: DATABASE_URL
+        sync: false
+      # Supabase project URL, e.g. https://abcd.supabase.co (verifies sign-in tokens)
+      - key: SUPABASE_URL
+        sync: false
+      # Only for projects still on the legacy JWT secret
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      # Secret key used only to delete logins on account deletion
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false

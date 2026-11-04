@@ -9,6 +9,11 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
+# Frontend config is baked in at build time: docker build --build-arg VITE_SUPABASE_URL=... .
+ARG VITE_API_BASE_URL=
+ARG VITE_SUPABASE_URL=
+ARG VITE_SUPABASE_PUBLISHABLE_KEY=
+ARG VITE_AUTH_REDIRECT_URL=
 RUN npm run build
 
 # Stage 2: Production Lean Runtime

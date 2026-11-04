@@ -1,16 +1,12 @@
 import express from 'express';
+import crypto from 'crypto';
 import { writeLimiter } from '../middleware/security.js';
-import { storagePath, readJson, writeJson, toSafeMap, requireClientId, sendServerError } from '../lib/storage.js';
+import { identify, requireOwner } from '../lib/auth.js';
+import { query } from '../db/index.js';
+import { sendServerError } from '../lib/validation.js';
 
-const PASSPORT_FILE = storagePath('passport.json');
-
-const DEFAULT_PASSPORT = () => ({
-  loggedHours: 0,
-  targetHours: 50,
-  nightHours: 0,
-  highwayHours: 0,
-  badges: []
-});
+const TARGET_HOURS = 50;
+const RECENT_SESSIONS = 50;
 
 const BADGES = [
   { thresh: 5, name: 'First Ignition' },
@@ -20,21 +16,59 @@ const BADGES = [
   { thresh: 50, name: 'Road Ready Master' }
 ];
 
-const router = express.Router();
-router.use(requireClientId);
+const round = (n) => Math.round(n * 100) / 100;
 
-// Get hours and badges for this client
-router.get('/', (req, res) => {
+// Totals and badges are derived from the individual drive logs, so there is
+// no running counter that can drift or race.
+export async function loadPassport(ownerId) {
+  const [{ rows: [totals] }, { rows: sessions }] = await Promise.all([
+    query(
+      `SELECT COALESCE(SUM(hours), 0)::float8 AS total,
+              COALESCE(SUM(hours) FILTER (WHERE is_night), 0)::float8 AS night,
+              COALESCE(SUM(hours) FILTER (WHERE is_highway), 0)::float8 AS highway
+         FROM roadready.drive_logs WHERE owner_id = $1`,
+      [ownerId]
+    ),
+    query(
+      `SELECT id, hours, is_night, is_highway, logged_at
+         FROM roadready.drive_logs WHERE owner_id = $1
+        ORDER BY logged_at DESC LIMIT ${RECENT_SESSIONS}`,
+      [ownerId]
+    )
+  ]);
+
+  const total = Number(totals.total);
+  return {
+    loggedHours: round(Math.min(TARGET_HOURS, total)),
+    totalHours: round(total),
+    targetHours: TARGET_HOURS,
+    nightHours: round(Number(totals.night)),
+    highwayHours: round(Number(totals.highway)),
+    badges: BADGES.filter((b) => total >= b.thresh).map((b) => b.name),
+    recentSessions: sessions.map((s) => ({
+      id: s.id,
+      hours: Number(s.hours),
+      isNight: s.is_night,
+      isHighway: s.is_highway,
+      loggedAt: new Date(s.logged_at).toISOString()
+    }))
+  };
+}
+
+const router = express.Router();
+router.use(identify, requireOwner);
+
+// Get hours, badges and recent sessions for the caller
+router.get('/', async (req, res) => {
   try {
-    const all = toSafeMap(readJson(PASSPORT_FILE, {}));
-    res.json(all[req.clientId] || DEFAULT_PASSPORT());
+    res.json(await loadPassport(req.ownerId));
   } catch (err) {
     sendServerError(res, 'Failed to read passport data', err);
   }
 });
 
-// Log practice hours for this client (rate-limited & strictly validated)
-router.post('/log', writeLimiter, (req, res) => {
+// Log a practice session (rate-limited & strictly validated)
+router.post('/log', writeLimiter, async (req, res) => {
   try {
     const { hours = 1, isNight = false, isHighway = false } = req.body || {};
     if (typeof hours !== 'number' || !Number.isFinite(hours) || hours <= 0 || hours > 12) {
@@ -44,22 +78,11 @@ router.post('/log', writeLimiter, (req, res) => {
       return res.status(400).json({ error: 'isNight and isHighway must be booleans' });
     }
 
-    const all = toSafeMap(readJson(PASSPORT_FILE, {}));
-    const passport = { ...DEFAULT_PASSPORT(), ...(all[req.clientId] || {}) };
-
-    passport.loggedHours = Math.min(passport.targetHours, passport.loggedHours + hours);
-    if (isNight) passport.nightHours += hours;
-    if (isHighway) passport.highwayHours += hours;
-
-    BADGES.forEach(b => {
-      if (passport.loggedHours >= b.thresh && !passport.badges.includes(b.name)) {
-        passport.badges.push(b.name);
-      }
-    });
-
-    all[req.clientId] = passport;
-    writeJson(PASSPORT_FILE, { ...all });
-    res.json({ success: true, passport });
+    await query(
+      'INSERT INTO roadready.drive_logs (id, owner_id, hours, is_night, is_highway) VALUES ($1, $2, $3, $4, $5)',
+      [crypto.randomUUID(), req.ownerId, hours, isNight, isHighway]
+    );
+    res.json({ success: true, passport: await loadPassport(req.ownerId) });
   } catch (err) {
     sendServerError(res, 'Failed to update passport', err);
   }
