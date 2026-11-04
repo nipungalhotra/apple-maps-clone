@@ -87,5 +87,46 @@ export const MIGRATIONS = [
       ALTER TABLE roadready.instructor_bookings ENABLE ROW LEVEL SECURITY;
       ALTER TABLE roadready.insurance_clicks ENABLE ROW LEVEL SECURITY;
     `
+  },
+  {
+    version: 2,
+    name: 'payments: entitlements per provider and webhook event log',
+    // One row per owner per payment provider, so a web (Stripe) purchase and an
+    // App Store / Play purchase (RevenueCat) never overwrite each other. Pro is
+    // active when any row is active. Existing rows from the simulated checkout move over.
+    sql: `
+      CREATE TABLE roadready.entitlements (
+        owner_id text NOT NULL,
+        provider text NOT NULL CHECK (provider IN ('simulated', 'stripe', 'revenuecat')),
+        plan text NOT NULL,
+        price double precision,
+        currency text,
+        unlocked_at timestamptz,
+        expires_at timestamptz,
+        will_renew boolean NOT NULL DEFAULT false,
+        store text,
+        external_customer_id text,
+        external_ref text,
+        updated_at timestamptz NOT NULL DEFAULT now(),
+        PRIMARY KEY (owner_id, provider)
+      );
+      CREATE INDEX entitlements_external_customer_idx ON roadready.entitlements (provider, external_customer_id);
+
+      INSERT INTO roadready.entitlements (owner_id, provider, plan, price, currency, unlocked_at, expires_at, external_ref, updated_at)
+        SELECT owner_id, 'simulated', tier, price, 'USD', unlocked_at, expires_at, transaction_id, updated_at
+          FROM roadready.subscriptions WHERE tier <> 'free';
+      DROP TABLE roadready.subscriptions;
+
+      CREATE TABLE roadready.payment_events (
+        provider text NOT NULL,
+        event_id text NOT NULL,
+        event_type text NOT NULL,
+        received_at timestamptz NOT NULL DEFAULT now(),
+        PRIMARY KEY (provider, event_id)
+      );
+
+      ALTER TABLE roadready.entitlements ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE roadready.payment_events ENABLE ROW LEVEL SECURITY;
+    `
   }
 ];

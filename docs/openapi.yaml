@@ -154,6 +154,75 @@ paths:
         '501':
           description: Payments are not configured on this server (production).
 
+  /api/payments/config:
+    get:
+      summary: Payment options available on this server
+      security: []
+      responses:
+        '200':
+          description: Plans and which payment providers are configured.
+
+  /api/payments/stripe/checkout:
+    post:
+      summary: Start a Stripe Checkout (web)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                plan: { type: string, enum: [lifetime, monthly] }
+      responses:
+        '200': { description: 'Checkout URL to open: { url }' }
+        '401': { description: Sign-in required. }
+        '409': { description: Plan already owned (code already_owned). }
+        '501': { description: Web payments not configured. }
+
+  /api/payments/stripe/confirm:
+    post:
+      summary: Confirm a finished checkout from the return page
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { description: Current subscription. }
+        '403': { description: The checkout belongs to another account. }
+
+  /api/payments/stripe/portal:
+    post:
+      summary: Stripe customer portal link (manage or cancel a web plan)
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { description: 'Portal URL: { url }' }
+        '404': { description: No web purchase for this account. }
+
+  /api/payments/stripe/webhook:
+    post:
+      summary: Stripe webhook (signature verified)
+      security: []
+      responses:
+        '200': { description: Processed (or a duplicate). }
+        '400': { description: Invalid signature. }
+
+  /api/payments/revenuecat/sync:
+    post:
+      summary: Re-check App Store / Google Play purchases with RevenueCat
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { description: Current subscription. }
+
+  /api/payments/revenuecat/webhook:
+    post:
+      summary: RevenueCat webhook (shared Authorization header)
+      security: []
+      responses:
+        '200': { description: Processed (or a duplicate). }
+        '401': { description: Wrong or missing Authorization header. }
+
   /api/account:
     get:
       summary: Current account

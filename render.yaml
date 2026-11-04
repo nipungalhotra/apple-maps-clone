@@ -31,3 +31,19 @@ services:
       # Secret key used only to delete logins on account deletion
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
+      # Web payments (Stripe). See docs/PAYMENTS.md
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_PRICE_LIFETIME
+        sync: false
+      - key: STRIPE_PRICE_MONTHLY
+        sync: false
+      - key: APP_URL
+        sync: false
+      # App Store / Google Play purchases (RevenueCat)
+      - key: REVENUECAT_SECRET_KEY
+        sync: false
+      - key: REVENUECAT_WEBHOOK_AUTH
+        sync: false

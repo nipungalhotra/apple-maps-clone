@@ -11,6 +11,7 @@ import subscriptionRoutes from './routes/subscription.js';
 import affiliatesRoutes from './routes/affiliates.js';
 import instructorsRoutes from './routes/instructors.js';
 import accountRoutes from './routes/account.js';
+import paymentRoutes, { stripeWebhook, revenueCatWebhook } from './routes/payments.js';
 import { getDb, query, closeDb } from './db/index.js';
 import { authConfigured } from './lib/auth.js';
 
@@ -26,6 +27,9 @@ const HOST = process.env.HOST || '0.0.0.0';
 app.disable('x-powered-by');
 app.use(helmetMiddleware);
 app.use(corsMiddleware());
+// Payment webhooks: Stripe signs the exact raw bytes, so this route must run before express.json().
+app.post('/api/payments/stripe/webhook', express.raw({ type: 'application/json', limit: '512kb' }), stripeWebhook);
+app.post('/api/payments/revenuecat/webhook', express.json({ limit: '256kb' }), revenueCatWebhook);
 app.use(express.json({ limit: '16kb' }));
 app.use('/api/', globalLimiter);
 
@@ -56,6 +60,7 @@ app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/affiliates', affiliatesRoutes);
 app.use('/api/instructors', instructorsRoutes);
 app.use('/api/account', accountRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Unknown API routes return JSON 404 (never the SPA HTML)
 app.use('/api', (req, res) => {

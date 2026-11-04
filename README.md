@@ -81,6 +81,7 @@ RoadReady's target market dynamics, multi-sided stakeholder incentives, and pric
 - **Voice Synthesis:** Web Speech API (`speechSynthesis`)
 - **Backend API:** Node.js, Express 5, Postgres (`pg`; embedded PGlite for local dev and tests)
 - **Accounts:** Supabase Auth (email + password), verified server-side with `jose`
+- **Payments:** Stripe Checkout (web) and RevenueCat (App Store / Google Play in-app purchases)
 - **Native Mobile:** Capacitor 8 (Android & iOS native projects)
 
 ---
@@ -125,6 +126,7 @@ npm run build    # Compiles production assets into /dist
 
 Local development needs no database setup: the API uses an embedded Postgres stored in `server/storage/pglite`.
 Accounts are off until you add Supabase settings; see **[Accounts and database](docs/ACCOUNTS_AND_DATABASE.md)**.
+Payments (Stripe on the web, App Store / Google Play via RevenueCat) are set up in **[Payments](docs/PAYMENTS.md)**; without them, development uses a simulated checkout.
 
 ---
 

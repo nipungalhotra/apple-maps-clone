@@ -210,6 +210,8 @@ export default function AccountModal({
                   <div className="space-y-2">
                     <p className="text-xs text-zinc-600 dark:text-zinc-300">
                       This permanently deletes your account, logged hours, plan and reports. It cannot be undone.
+                      A monthly plan bought on our website is cancelled for you. If you subscribed through the
+                      App Store or Google Play, cancel it there too, or it will keep renewing.
                       Type <strong>DELETE</strong> to confirm.
                     </p>
                     <input

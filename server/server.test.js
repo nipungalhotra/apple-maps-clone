@@ -214,8 +214,9 @@ describe('RoadReady Express API Endpoints', () => {
       try {
         const res = await request(app).delete('/api/account').set(auth);
         expect(res.status).toBe(200);
-        expect(fetchSpy).toHaveBeenCalledTimes(1);
-        const [url, init] = fetchSpy.mock.calls[0];
+        const call = fetchSpy.mock.calls.find(([u]) => String(u).includes('/auth/v1/admin/users/'));
+        expect(call).toBeTruthy();
+        const [url, init] = call;
         expect(String(url)).toBe(`${SUPABASE_URL}/auth/v1/admin/users/${sub}`);
         expect(init.method).toBe('DELETE');
         expect(init.headers.apikey).toBe('test-service-role-key');
@@ -224,7 +225,7 @@ describe('RoadReady Express API Endpoints', () => {
       }
 
       const owner = `user:${sub}`;
-      for (const table of ['drive_logs', 'subscriptions', 'community_reports']) {
+      for (const table of ['drive_logs', 'entitlements', 'community_reports']) {
         const { rows } = await db.query(`SELECT COUNT(*)::int AS n FROM roadready.${table} WHERE owner_id = $1`, [owner]);
         expect(rows[0].n).toBe(0);
       }
