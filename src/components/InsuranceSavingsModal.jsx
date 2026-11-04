@@ -4,6 +4,7 @@ import {
   Sparkles, Award, TrendingDown, Star, CheckCircle2, AlertCircle
 } from 'lucide-react';
 import { INSURANCE_PARTNERS, calculateEstimatedInsuranceSavings } from '../data/insurancePartners';
+import { apiFetch } from '../services/apiConfig';
 
 export default function InsuranceSavingsModal({
   isOpen,
@@ -29,20 +30,15 @@ export default function InsuranceSavingsModal({
 
     // Track affiliate CPA click event on backend
     try {
-      await fetch('/api/affiliates/insurance-click', {
+      await apiFetch('/api/affiliates/insurance-click', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: {
           partnerId: partner.id,
           partnerName: partner.name,
-          cpaPayout: partner.cpaPayout,
           estimatedSavings: partner.estimatedAnnualSavings,
-          driverAge,
-          hasLogbook,
-          loggedHours,
-          isDmvPassed,
-          timestamp: new Date().toISOString()
-        })
+          driverAge: Number(driverAge),
+          loggedHours
+        }
       });
     } catch {
       // Offline fallback

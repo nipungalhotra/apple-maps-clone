@@ -12,7 +12,7 @@ export const INSURANCE_PARTNERS = [
     cpaPayout: 75.00,
     quoteTimeMins: '3 mins',
     features: [
-      'Official Driver Education Certification Discount',
+      'Possible Driver Education Discount',
       'Good Student Discount (B average or higher)',
       '24/7 Roadside Assistance & Mobile Claim App'
     ],

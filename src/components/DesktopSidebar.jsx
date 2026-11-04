@@ -82,7 +82,7 @@ export default function DesktopSidebar({
           <button
             role="tab"
             aria-selected={activeMainTab === 'explore'}
-            aria-label="Explore Standard Apple Maps"
+            aria-label="Explore map"
             onClick={() => setActiveMainTab('explore')}
             className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
               activeMainTab === 'explore'
@@ -118,7 +118,7 @@ export default function DesktopSidebar({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search Apple Maps"
+              placeholder="Search places"
               aria-label="Search places and addresses"
               className="w-full pl-9 pr-8 py-2 text-sm bg-black/5 dark:bg-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-apple-blue/50 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 font-medium"
             />

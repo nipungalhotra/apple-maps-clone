@@ -1,8 +1,19 @@
 import React, { useEffect, useRef } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+// MapLibre v6 runs its parser in a module worker; let Vite bundle it so the URL
+// resolves in dev, production builds and Capacitor WebViews.
+import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { LEARNER_ZONES } from '../data/learnerZones';
+import { apiFetch } from '../services/apiConfig';
 import { MAP_STYLES, FALLBACK_STYLES } from '../config/mapConfig';
+
+maplibregl.setWorkerUrl(maplibreWorkerUrl);
+
+// Escape untrusted text before interpolating into marker innerHTML (XSS guard).
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"'`]/g, (ch) => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;'
+}[ch]));
 
 const isValidCoord = (c) => (
   Array.isArray(c) &&
@@ -103,7 +114,8 @@ export default function AppleMap({
         zoom: safeZoom,
         pitch: safePitch,
         bearing: safeBearing,
-        attributionControl: false
+        // OpenStreetMap / CARTO licences require visible attribution.
+        attributionControl: { compact: true }
       });
     } catch (err) {
       console.warn('MapLibre primary initialization fallback triggered:', err);
@@ -114,7 +126,8 @@ export default function AppleMap({
         zoom: safeZoom,
         pitch: safePitch,
         bearing: safeBearing,
-        attributionControl: false
+        // OpenStreetMap / CARTO licences require visible attribution.
+        attributionControl: { compact: true }
       });
     }
 
@@ -330,7 +343,7 @@ export default function AppleMap({
       el.innerHTML = `
         <div class="flex flex-col items-center">
           <div class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-white/95 dark:bg-zinc-800/95 text-zinc-900 dark:text-zinc-100 shadow-md mb-1 border border-black/10 whitespace-nowrap">
-            ${selectedPlace.name}
+            ${escapeHtml(selectedPlace.name)}
           </div>
           <div class="w-8 h-8 rounded-full bg-apple-red flex items-center justify-center shadow-lg border-2 border-white text-white">
             <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
@@ -372,7 +385,7 @@ export default function AppleMap({
             </div>
             <div class="w-5 h-1.5 ${cone.type === 'white' ? 'bg-zinc-300' : 'bg-orange-600'} rounded-xs mt-0.5"></div>
           </div>
-          ${cone.label ? `<span class="text-[9px] font-black text-orange-600 dark:text-orange-300 bg-white/90 dark:bg-zinc-900/90 px-1 rounded-sm shadow-xs mt-0.5">${cone.label}</span>` : ''}
+          ${cone.label ? `<span class="text-[9px] font-black text-orange-600 dark:text-orange-300 bg-white/90 dark:bg-zinc-900/90 px-1 rounded-sm shadow-xs mt-0.5">${escapeHtml(cone.label)}</span>` : ''}
         </div>
       `;
 
@@ -420,8 +433,7 @@ export default function AppleMap({
 
     if (showTraffic) {
       const [lng, lat] = userLocation || [-122.4194, 37.7749];
-      fetch(`/api/traffic?lat=${lat}&lng=${lng}`)
-        .then(res => res.json())
+      apiFetch(`/api/traffic?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}`)
         .then(data => {
           const source = mapRef.current?.getSource('traffic-lines');
           if (source && data?.features) {
@@ -436,8 +448,8 @@ export default function AppleMap({
               el.innerHTML = `
                 <div class="flex items-center gap-1.5 px-2.5 py-1 bg-amber-500 text-white rounded-full text-[10px] font-black shadow-lg border border-white/40">
                   <span>⚠️</span>
-                  <span>${inc.title}</span>
-                  <span class="bg-black/20 px-1 rounded-sm text-[9px]">+${inc.delayMinutes}m</span>
+                  <span>${escapeHtml(inc.title)}</span>
+                  <span class="bg-black/20 px-1 rounded-sm text-[9px]">+${escapeHtml(inc.delayMinutes)}m</span>
                 </div>
               `;
               const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
@@ -525,7 +537,7 @@ export default function AppleMap({
               ? 'bg-apple-green text-white border-white scale-110'
               : 'bg-white/95 dark:bg-zinc-800/95 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
           } whitespace-nowrap transition-transform duration-200 group-hover:scale-110">
-            🛡️ ${zone.safetyScore}% Safe
+            🛡️ ${escapeHtml(zone.safetyScore)}% Safe
           </div>
           <div class="w-7 h-7 rounded-full flex items-center justify-center shadow-lg border-2 border-white ${
             zone.type === 'open_ground' ? 'bg-emerald-500' : 'bg-sky-500'

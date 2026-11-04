@@ -1,5 +1,5 @@
 // Model 4: Motorcycle Safety Course (MSF) Basic RiderCourse Prep Pack Data
-// Exact parking lot cone dimensions for official MSF & CMSP licensing evaluations
+// Practice cone layouts modelled on MSF & CMSP evaluation exercises (not official layouts)
 
 export const MSF_DRILLS = [
   {

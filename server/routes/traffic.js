@@ -2,10 +2,12 @@ import express from 'express';
 
 const router = express.Router();
 
-// Real-Time Local Traffic Congestion Vectors & Incidents
+// Demo traffic overlay: SYNTHETIC data generated around the requested point (not real traffic)
 router.get('/', (req, res) => {
-  const lat = parseFloat(req.query.lat) || 37.7749;
-  const lng = parseFloat(req.query.lng) || -122.4194;
+  const latRaw = parseFloat(req.query.lat);
+  const lngRaw = parseFloat(req.query.lng);
+  const lat = Number.isFinite(latRaw) && Math.abs(latRaw) <= 90 ? latRaw : 37.7749;
+  const lng = Number.isFinite(lngRaw) && Math.abs(lngRaw) <= 180 ? lngRaw : -122.4194;
 
   const currentHour = new Date().getHours();
   const isRushHour = (currentHour >= 8 && currentHour <= 10) || (currentHour >= 17 && currentHour <= 19);
@@ -125,6 +127,7 @@ router.get('/', (req, res) => {
 
   res.json({
     type: 'FeatureCollection',
+    simulated: true,
     isRushHour,
     currentHour,
     overallTrafficIndex: isRushHour ? 78 : 28,

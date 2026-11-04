@@ -1,11 +1,11 @@
 /**
- * Official DMV Driving Test Routes & Examiner Checkpoints
+ * Practice routes modelled on typical DMV road tests (not official DMV routes)
  */
 
 export const DMV_TEST_ROUTES = [
   {
     id: 'dmv-sf-fell',
-    name: 'San Francisco DMV Official Test Route',
+    name: 'San Francisco DMV-Area Practice Route',
     officeName: 'SF Central DMV (1377 Fell St)',
     coordinates: [-122.4385, 37.7735],
     durationMins: 18,

@@ -22,13 +22,13 @@ export default function MSFPrepPackModal({
     if (onApplyDrillCones) {
       onApplyDrillCones(drill);
     }
-    siriVoice.speak(`Deploying official MSF ${drill.name} cones to the parking ground. Remember: turn head and eyes and feather the clutch.`);
+    siriVoice.speak(`Placing MSF-style ${drill.name} practice cones to the parking ground. Remember: turn head and eyes and feather the clutch.`);
     onClose();
   };
 
   const handleUnlockPack = () => {
     setIsUnlocked(true);
-    siriVoice.speak("Motorcycle MSF Basic RiderCourse Masterclass unlocked! All official cone dimensions ready.");
+    siriVoice.speak("Motorcycle MSF Basic RiderCourse Masterclass unlocked! All practice cone layouts ready.");
   };
 
   return (
@@ -69,7 +69,7 @@ export default function MSFPrepPackModal({
           {/* Drill Selector Tabs */}
           <div>
             <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400 block mb-1.5">
-              Select Official MSF Test Drill (4 Drills):
+              Select an MSF-Style Practice Drill (4 Drills):
             </span>
             <div className="grid grid-cols-2 gap-2 text-xs">
               {MSF_DRILLS.map((drill) => {
@@ -97,7 +97,7 @@ export default function MSFPrepPackModal({
             <div className="flex items-start justify-between">
               <div>
                 <span className="text-[10px] font-black uppercase text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded-full">
-                  Official Cone Layout
+                  Suggested Cone Layout
                 </span>
                 <h3 className="text-base font-black text-white mt-1">{selectedDrill.name}</h3>
                 <p className="text-xs text-zinc-400">{selectedDrill.subtitle}</p>

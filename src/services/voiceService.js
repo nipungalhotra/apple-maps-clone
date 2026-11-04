@@ -1,5 +1,5 @@
 /**
- * Siri Voice Guidance Service for Apple Maps
+ * Voice Guidance Service (Web Speech API)
  * Uses native browser Web Speech API (SpeechSynthesis)
  */
 

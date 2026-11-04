@@ -1,10 +1,10 @@
 {
-  "appId": "com.applemap.learner",
+  "appId": "com.roadready.app",
   "appName": "RoadReady",
   "webDir": "dist",
   "server": {
     "androidScheme": "https",
-    "cleartext": true
+    "cleartext": false
   },
   "plugins": {
     "Geolocation": {

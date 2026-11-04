@@ -178,169 +178,20 @@ export function evaluateLocationSafety({
   };
 }
 
+/** Radius (km) around San Francisco covered by the curated, hand-verified zone list. */
+export const VERIFIED_COVERAGE_RADIUS_KM = 25;
+
 /**
- * Dynamically discovers or synthesizes verified beginner learner zones
- * clustered within 0.5 km to 5.0 km of the user's active coordinates.
+ * Returns the curated, hand-verified practice zones near the user.
+ *
+ * Only San Francisco is covered today. Outside that area we return an empty
+ * list rather than synthesizing grounds at fixed offsets from the user's GPS:
+ * made-up coordinates can land on freeways, water or private property, which
+ * is a real safety hazard for a learner driver.
  */
 export function generateLearnerZonesForLocation(userCoord = [-122.4194, 37.7749]) {
-  const [lng, lat] = userCoord;
   const distToSF = calculateDistanceKm(userCoord, [-122.4194, 37.7749]);
-
-  // If user is inside or immediately around San Francisco (< 25km), return the original SF database
-  if (distToSF <= 25) {
-    return LEARNER_ZONES;
-  }
-
-  // Otherwise, synthesize 5 realistic, high-safety practice grounds directly in the user's current neighborhood
-  const latKey = Math.abs(Math.round(lat * 100));
-  const lngKey = Math.abs(Math.round(lng * 100));
-
-  return [
-    {
-      id: `local-sports-ground-${latKey}-${lngKey}`,
-      name: 'Community Sports Complex Practice Ground',
-      subtitle: '0.8 km from your current location',
-      type: 'open_ground',
-      vehicleTypes: ['car', 'bike'],
-      safetyScore: 98,
-      difficulty: 'Absolute Beginner',
-      surface: 'Smooth Clean Asphalt',
-      bestHours: 'Daily 7:00 AM - 11:00 AM & 3:00 PM - 6:00 PM',
-      trafficLevel: 'Zero to Minimal',
-      widthMeters: 45,
-      coordinates: [lng + 0.0055, lat + 0.0042],
-      polygon: [
-        [lng + 0.0035, lat + 0.0055],
-        [lng + 0.0075, lat + 0.0055],
-        [lng + 0.0075, lat + 0.0030],
-        [lng + 0.0035, lat + 0.0030],
-        [lng + 0.0035, lat + 0.0055]
-      ],
-      recommendedDrills: [
-        'Clutch & Throttle Balance (1st to 2nd gear)',
-        'Figure-8 Turning for Bikes',
-        'Smooth Emergency Braking',
-        '3-Point Turn & Reversing'
-      ],
-      description: 'Massive open paved perimeter lot with zero through-traffic and wide run-off buffers. The #1 rated spot in your immediate area to practice without any street pressure.',
-      perks: ['No curbs or pillars', 'Over 350m continuous open asphalt', 'Zero cross-traffic', 'Ideal for motorcycle balance']
-    },
-    {
-      id: `local-parking-lot-${latKey}-${lngKey}`,
-      name: 'Civic Center & Weekend Plaza Lot',
-      subtitle: '1.3 km from your current location',
-      type: 'parking_lot',
-      vehicleTypes: ['car', 'bike'],
-      safetyScore: 95,
-      difficulty: 'Beginner',
-      surface: 'Freshly Striped Blacktop',
-      bestHours: 'Saturday & Sunday All Day',
-      trafficLevel: 'None on Weekends / Off-Peak',
-      widthMeters: 38,
-      coordinates: [lng - 0.0075, lat + 0.0068],
-      polygon: [
-        [lng - 0.0095, lat + 0.0080],
-        [lng - 0.0055, lat + 0.0080],
-        [lng - 0.0055, lat + 0.0055],
-        [lng - 0.0095, lat + 0.0055],
-        [lng - 0.0095, lat + 0.0080]
-      ],
-      recommendedDrills: [
-        '90° Perpendicular Bay Parking',
-        'Reverse Bay Parking using Mirrors',
-        'Slow Speed Bike Friction Zone Control',
-        'Slalom between painted parking bays'
-      ],
-      description: 'Large tiered institutional lot vacant during non-peak mornings. Striped bays provide natural guides for mastering vehicle dimensions and reversing.',
-      perks: ['Pre-painted parking bays', 'Gentle slope for hill start testing', 'Weekend open access']
-    },
-    {
-      id: `local-quiet-road-${latKey}-${lngKey}`,
-      name: 'Greenbelt Boulevard Quiet Ring Road',
-      subtitle: '2.1 km from your current location',
-      type: 'quiet_road',
-      vehicleTypes: ['car', 'bike'],
-      safetyScore: 93,
-      difficulty: 'Novice (Road Ready)',
-      surface: 'Paved Asphalt with Clear Markings',
-      bestHours: 'Weekdays 10:00 AM - 2:00 PM',
-      trafficLevel: 'Very Low (15 mph speed ceiling)',
-      widthMeters: 14,
-      coordinates: [lng + 0.0125, lat - 0.0085],
-      pathCoordinates: [
-        [lng + 0.0100, lat - 0.0075],
-        [lng + 0.0150, lat - 0.0065],
-        [lng + 0.0160, lat - 0.0105],
-        [lng + 0.0115, lat - 0.0115],
-        [lng + 0.0100, lat - 0.0075]
-      ],
-      recommendedDrills: [
-        'Stop Sign Compliance & Right-of-Way',
-        'Gentle Road Curvature & Lane Keeping',
-        'Parallel Parking along Wide Curbs',
-        'Smooth Braking at Intersections'
-      ],
-      description: 'Quiet residential perimeter loop with 15 mph speed limit, clear stop signs, and virtually zero commercial truck traffic. Perfect first street environment.',
-      perks: ['15 mph speed ceiling', 'Wide shoulders for parking practice', 'Clear painted lane lines']
-    },
-    {
-      id: `local-tech-park-${latKey}-${lngKey}`,
-      name: 'Tech & Logistics Park Weekend Circuit',
-      subtitle: '3.1 km from your current location',
-      type: 'quiet_road',
-      vehicleTypes: ['car', 'bike'],
-      safetyScore: 91,
-      difficulty: 'Beginner to Intermediate',
-      surface: 'Smooth Tarmac',
-      bestHours: 'Sunday Mornings 7:00 AM - 11:00 AM',
-      trafficLevel: 'Low (Off-shift hours)',
-      widthMeters: 16,
-      coordinates: [lng - 0.0165, lat - 0.0125],
-      pathCoordinates: [
-        [lng - 0.0140, lat - 0.0100],
-        [lng - 0.0190, lat - 0.0115],
-        [lng - 0.0200, lat - 0.0155],
-        [lng - 0.0150, lat - 0.0145],
-        [lng - 0.0140, lat - 0.0100]
-      ],
-      recommendedDrills: [
-        'U-Turn & Roundabout Simulation',
-        'Side Mirror & Blind Spot Verification',
-        'Bike Leaning & Cornering'
-      ],
-      description: 'Wide modern corporate park road loop with wide turnarounds and zero foot-traffic during non-working hours.',
-      perks: ['Wide turn radius', 'Great pavement condition', 'Minimal pedestrian activity']
-    },
-    {
-      id: `local-stadium-runway-${latKey}-${lngKey}`,
-      name: 'Regional Stadium Perimeter Expanse',
-      subtitle: '4.2 km from your current location',
-      type: 'open_ground',
-      vehicleTypes: ['car', 'bike'],
-      safetyScore: 97,
-      difficulty: 'Beginner',
-      surface: 'Paved Concrete Runway Expanse',
-      bestHours: 'Non-Game Days & Mornings',
-      trafficLevel: 'Zero',
-      widthMeters: 55,
-      coordinates: [lng + 0.0210, lat + 0.0165],
-      polygon: [
-        [lng + 0.0185, lat + 0.0185],
-        [lng + 0.0240, lat + 0.0180],
-        [lng + 0.0235, lat + 0.0145],
-        [lng + 0.0180, lat + 0.0150],
-        [lng + 0.0185, lat + 0.0185]
-      ],
-      recommendedDrills: [
-        'Gear Shifting (Gears 1 to 4)',
-        'Slalom & Cone Weaving',
-        'High-Speed Deceleration',
-        'Bike Counter-Steering Practice'
-      ],
-      description: 'Expansive paved perimeter runway with unmatched run-off clearance. Perfect for advancing through higher gears and braking from higher speeds.',
-      perks: ['Extra wide 55m expanse', 'No street furniture', 'Long straightaways']
-    }
-  ];
+  return distToSF <= VERIFIED_COVERAGE_RADIUS_KM ? LEARNER_ZONES : [];
 }
 
 /**

@@ -1,6 +1,8 @@
 // Subscription & B2C Revenue Engine Service
 // Handles Free vs Learner PRO tier capabilities, state persistence, and mock payment gateway
 
+import { apiFetch } from './apiConfig';
+
 const STORAGE_KEY = 'apple_maps_learner_subscription';
 
 export const PRO_FEATURES = {
@@ -26,6 +28,9 @@ export const getSubscriptionState = () => {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_STATE;
     const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed.isPro !== 'boolean') return DEFAULT_STATE;
+    // Expired monthly plans fall back to free.
+    if (parsed.expiresAt && Date.parse(parsed.expiresAt) < Date.now()) return DEFAULT_STATE;
     return parsed;
   } catch {
     return DEFAULT_STATE;
@@ -40,48 +45,43 @@ export const saveSubscriptionState = (state) => {
   }
 };
 
+// Pro is granted only after the server confirms the purchase.
+// NOTE: the server currently runs a SIMULATED checkout (dev only, or when
+// ALLOW_SIMULATED_PAYMENTS=true). Production returns 501 until a real payment
+// provider (Stripe on web, StoreKit / Play Billing on mobile) is integrated.
 export const upgradeToPro = async (tier = 'lifetime') => {
-  const price = tier === 'lifetime' ? 29.99 : 4.99;
-  const now = new Date();
-  const newState = {
-    isPro: true,
-    tier,
-    price,
-    unlockedAt: now.toISOString(),
-    expiresAt: tier === 'monthly' 
-      ? new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString() 
-      : null
-  };
-
-  saveSubscriptionState(newState);
-
-  // Sync with backend API
-  try {
-    await fetch('/api/subscription/upgrade', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newState)
-    });
-  } catch (err) {
-    console.warn('Backend sync failed, saved locally', err);
+  const data = await apiFetch('/api/subscription/upgrade', { method: 'POST', body: { tier } });
+  const sub = data?.subscription;
+  if (!sub?.isPro) {
+    throw new Error('Upgrade was not confirmed by the server');
   }
-
-  return newState;
+  saveSubscriptionState(sub);
+  return sub;
 };
 
 export const downgradeToFree = async () => {
   const newState = { ...DEFAULT_STATE };
   saveSubscriptionState(newState);
-
   try {
-    await fetch('/api/subscription/reset', {
-      method: 'POST'
-    });
+    await apiFetch('/api/subscription/reset', { method: 'POST', body: {} });
   } catch (err) {
     console.warn('Backend reset failed', err);
   }
-
   return newState;
+};
+
+// Re-sync local cache with the server's record for this client.
+export const refreshSubscriptionState = async () => {
+  try {
+    const sub = await apiFetch('/api/subscription');
+    if (sub && typeof sub.isPro === 'boolean') {
+      saveSubscriptionState(sub);
+      return sub;
+    }
+  } catch {
+    // keep cached state when offline
+  }
+  return getSubscriptionState();
 };
 
 // Access Control Helpers

@@ -91,7 +91,7 @@ export default function ConeCourseBuilder({
         >
           <span className="flex items-center gap-1.5">
             <Bike className="w-4 h-4 text-orange-600 animate-pulse" />
-            <span>Official MSF Test Cones (Box & Swerve)</span>
+            <span>MSF-Style Practice Cones (Box & Swerve)</span>
           </span>
           <span className="text-[9px] bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black px-2 py-0.5 rounded-full shadow-xs">
             $14.99 Pack

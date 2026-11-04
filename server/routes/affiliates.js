@@ -1,55 +1,55 @@
 import express from 'express';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import crypto from 'crypto';
 import { writeLimiter } from '../middleware/security.js';
+import { storagePath, readJson, writeJson, cleanString, sendServerError } from '../lib/storage.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const STORAGE_DIR = process.env.STORAGE_DIR || path.join(__dirname, '../storage');
-const INSURANCE_CLICKS_FILE = path.join(STORAGE_DIR, 'insurance_clicks.json');
+const INSURANCE_CLICKS_FILE = storagePath('insurance_clicks.json');
+// Token required to read affiliate lead data. Unset = endpoint disabled.
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || '';
 
 const router = express.Router();
-
-// Initialize clicks store
-if (!fs.existsSync(INSURANCE_CLICKS_FILE)) {
-  fs.writeFileSync(INSURANCE_CLICKS_FILE, JSON.stringify([], null, 2));
-}
 
 // Track insurance quote click
 router.post('/insurance-click', writeLimiter, (req, res) => {
   try {
-    const clickData = req.body;
-    const raw = fs.readFileSync(INSURANCE_CLICKS_FILE, 'utf-8');
-    const clicks = JSON.parse(raw);
+    const body = req.body || {};
+    const partnerId = cleanString(body.partnerId, { max: 60, required: true });
+    const partnerName = cleanString(body.partnerName, { max: 80, fallback: '' });
+    if (!partnerId || partnerName === null) {
+      return res.status(400).json({ error: 'partnerId is required' });
+    }
+    const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 
+    const clicks = readJson(INSURANCE_CLICKS_FILE, []);
     const record = {
-      id: `aff-click-${Date.now()}`,
-      partnerId: String(clickData.partnerId || 'partner').slice(0, 50),
-      partnerName: String(clickData.partnerName || 'Partner').slice(0, 80),
-      cpaPayout: Number(clickData.cpaPayout) || 75.00,
-      estimatedSavings: Number(clickData.estimatedSavings) || 450,
-      driverAge: Number(clickData.driverAge) || 17,
-      loggedHours: Number(clickData.loggedHours) || 0,
+      id: `aff-click-${crypto.randomUUID()}`,
+      partnerId,
+      partnerName,
+      estimatedSavings: num(body.estimatedSavings),
+      driverAge: num(body.driverAge),
+      loggedHours: num(body.loggedHours),
       timestamp: new Date().toISOString()
     };
 
-    clicks.unshift(record);
-    fs.writeFileSync(INSURANCE_CLICKS_FILE, JSON.stringify(clicks, null, 2));
-    res.json({ success: true, trackingRecord: record, totalDispatchedLeads: clicks.length });
+    const next = [record, ...(Array.isArray(clicks) ? clicks : [])].slice(0, 10_000);
+    writeJson(INSURANCE_CLICKS_FILE, next);
+    // Do not echo totals or other users' data back to the client.
+    res.status(201).json({ success: true, id: record.id });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to track insurance affiliate click', details: err.message });
+    sendServerError(res, 'Failed to track insurance affiliate click', err);
   }
 });
 
-// Get insurance click records
+// Admin-only: lead data is not public.
 router.get('/insurance-clicks', (req, res) => {
-  try {
-    const raw = fs.readFileSync(INSURANCE_CLICKS_FILE, 'utf-8');
-    res.json(JSON.parse(raw));
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to read insurance clicks', details: err.message });
+  const auth = req.get('Authorization') || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  const valid = ADMIN_TOKEN && token.length === ADMIN_TOKEN.length &&
+    crypto.timingSafeEqual(Buffer.from(token), Buffer.from(ADMIN_TOKEN));
+  if (!valid) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
+  res.json(readJson(INSURANCE_CLICKS_FILE, []));
 });
 
 export default router;

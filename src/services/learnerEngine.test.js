@@ -17,6 +17,11 @@ describe('Learner Engine Service', () => {
     expect(Array.isArray(first.coordinates)).toBe(true);
   });
 
+  it('should not invent practice zones outside verified coverage', () => {
+    const chicago = [-87.6298, 41.8781];
+    expect(generateLearnerZonesForLocation(chicago)).toEqual([]);
+  });
+
   it('should calculate geographic distance in km between coordinates', () => {
     const coordA = [-122.4194, 37.7749];
     const coordB = [-122.4194, 37.7849]; // approx 1.11 km north

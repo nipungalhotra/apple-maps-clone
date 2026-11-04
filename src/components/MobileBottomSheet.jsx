@@ -99,7 +99,7 @@ export default function MobileBottomSheet({
           <button
             role="tab"
             aria-selected={activeMainTab === 'explore'}
-            aria-label="Explore Apple Maps"
+            aria-label="Explore map"
             onClick={() => {
               setActiveMainTab('explore');
               if (sheetState === 'peek') setSheetState('half');

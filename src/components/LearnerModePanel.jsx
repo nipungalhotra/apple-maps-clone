@@ -9,6 +9,19 @@ import { getFilteredLearnerZones, getDrillsForVehicle, evaluateLocationSafety } 
 import { WEATHER_CONDITIONS, calculateWeatherAdjustedSafety } from '../services/weatherSafetyService';
 import { INITIAL_COMMUNITY_REPORTS } from '../data/communityReports';
 import { canAccessZone } from '../services/subscriptionService';
+import { apiFetch } from '../services/apiConfig';
+
+const formatTimeAgo = (iso) => {
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return '';
+  const mins = Math.max(0, Math.round((Date.now() - t) / 60000));
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.round(hrs / 24);
+  return days === 1 ? 'Yesterday' : `${days}d ago`;
+};
 import ConeCourseBuilder from './ConeCourseBuilder';
 import DMVTestSimulator from './DMVTestSimulator';
 import LearnerPassportModal from './LearnerPassportModal';
@@ -59,8 +72,7 @@ export default function LearnerModePanel({
 
   // Sync community reports from backend
   useEffect(() => {
-    fetch('/api/community-reports')
-      .then(res => res.json())
+    apiFetch('/api/community-reports')
       .then(data => {
         if (data && typeof data === 'object') {
           setCommunityReports(prev => ({ ...prev, ...data }));
@@ -108,7 +120,7 @@ export default function LearnerModePanel({
     const newEntry = {
       id: `rep-${Date.now()}`,
       author: 'You (Learner)',
-      timeAgo: 'Just now',
+      createdAt: new Date().toISOString(),
       gateStatus: newGateStatus,
       securityStatus: 'Reported by you',
       surfaceCondition: weatherMode === 'rain' ? 'Wet Surface' : 'Dry & Clear',
@@ -123,16 +135,15 @@ export default function LearnerModePanel({
     setNewReportText('');
 
     try {
-      await fetch('/api/community-reports', {
+      await apiFetch('/api/community-reports', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: {
           zoneId: activeZone.id,
           author: 'You (Learner)',
           status: newGateStatus,
           surface: weatherMode === 'rain' ? 'Wet Surface' : 'Dry & Clear',
-          notes: submittedText
-        })
+          notes: submittedText.slice(0, 500)
+        }
       });
     } catch {
       // Local state fallback preserved
@@ -374,6 +385,13 @@ export default function LearnerModePanel({
               </span>
             </div>
 
+            {zones.length === 0 && (
+              <div className="p-4 rounded-2xl border border-dashed border-black/10 dark:border-white/10 text-xs text-zinc-600 dark:text-zinc-400">
+                <p className="font-bold text-zinc-800 dark:text-zinc-200 mb-1">No verified practice grounds here yet</p>
+                <p>RoadReady currently lists hand-checked grounds in the San Francisco area only. Choose an empty lot you have permission to use, and always practice with a licensed supervising driver.</p>
+              </div>
+            )}
+
             {zones.map((zone, idx) => {
               const isSelected = selectedLearnerZone?.id === zone.id;
               const isLocked = !canAccessZone(idx, isPro);
@@ -549,7 +567,7 @@ export default function LearnerModePanel({
                   <div key={rep.id} className="pt-2 text-xs space-y-1">
                     <div className="flex items-center justify-between text-[11px]">
                       <span className="font-bold text-zinc-800 dark:text-zinc-200">{rep.author}</span>
-                      <span className="text-zinc-400 text-[10px]">{rep.timeAgo}</span>
+                      <span className="text-zinc-400 text-[10px]">{rep.timeAgo || formatTimeAgo(rep.createdAt)}</span>
                     </div>
                     <div className="flex items-center gap-2 text-[10px]">
                       <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 font-bold">

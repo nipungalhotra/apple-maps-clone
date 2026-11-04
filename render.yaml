@@ -1,10 +1,10 @@
 services:
   - type: web
-    name: apple-maps-clone-api
+    name: roadready-api
     env: node
     plan: free
     region: oregon
-    buildCommand: npm install
+    buildCommand: npm ci --omit=dev
     startCommand: node server/index.js
     healthCheckPath: /api/health
     autoDeploy: true
@@ -13,3 +13,9 @@ services:
         value: production
       - key: PORT
         value: 3001
+      # Comma-separated web origins allowed to call the API (e.g. https://roadready.vercel.app)
+      - key: ALLOWED_ORIGINS
+        sync: false
+      # Bearer token for GET /api/affiliates/insurance-clicks (leave unset to disable)
+      - key: ADMIN_TOKEN
+        sync: false
