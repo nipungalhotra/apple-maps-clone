@@ -81,7 +81,7 @@ export default function LearnerPassportModal({
                     </span>
                   )}
                 </h3>
-                <p className="text-xs text-zinc-400">Official Practice Hours & Achievement Log</p>
+                <p className="text-xs text-zinc-400">Personal Practice Hours & Achievement Log</p>
               </div>
             </div>
             <button

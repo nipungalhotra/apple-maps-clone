@@ -95,6 +95,8 @@ export default function LearnerProPaywallModal({
         {/* Close button */}
         <button
           onClick={onClose}
+          aria-label="Close"
+          title="Close"
           className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-zinc-500 dark:text-zinc-400 transition-colors"
         >
           <X className="w-4 h-4" />

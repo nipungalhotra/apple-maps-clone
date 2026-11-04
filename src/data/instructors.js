@@ -15,9 +15,9 @@ export const DRIVING_INSTRUCTORS = [
     transmission: ['Automatic'],
     phone: '(415) 890-3419',
     licenseNumber: 'CA-DS-77491',
-    bio: 'Former DMV examiner with 14 years experience. Specializes in turning nervous first-time drivers into confident test-passers on official local DMV routes.',
+    bio: 'Former DMV examiner with 14 years experience. Specializes in turning nervous first-time drivers into confident test-passers on roads around local DMV offices.',
     specialties: [
-      'Official DMV Road Test Simulation',
+      'DMV-Style Road Test Practice',
       'Parallel Parking & Reverse Bay Docking',
       'Uncontrolled 4-Way Stop Scenarios',
       'Nervous & Anxious Beginners'
@@ -54,7 +54,7 @@ export const DRIVING_INSTRUCTORS = [
     pricingPackages: [
       { id: 'eval-1hr', name: '1-Hour Parking Lot Calibration', price: 80, duration: '60 mins', desc: 'Cones, mirror setup, and smooth braking.' },
       { id: 'dmv-2hr', name: '2-Hour DMV Prep & Mock Test', price: 150, duration: '120 mins', desc: 'Strict DMV examiner mock trial.' },
-      { id: 'night-2hr', name: '2-Hour Certified Night Driving', price: 160, duration: '120 mins', desc: 'Fulfill night driving requirements safely.' }
+      { id: 'night-2hr', name: '2-Hour Supervised Night Driving', price: 160, duration: '120 mins', desc: 'Fulfill night driving requirements safely.' }
     ],
     meetAtGrounds: ['ccsf-lower-parking', 'quiet-boulevard', 'ocean-beach-lot'],
     availableToday: true,

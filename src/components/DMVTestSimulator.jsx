@@ -114,7 +114,7 @@ export default function DMVTestSimulator({
         {isPro ? (
           <>
             <Play className="w-3.5 h-3.5 fill-white" />
-            <span>Drive Official Test Route with Examiner Audio</span>
+            <span>Drive Practice Test Route with Examiner Audio</span>
           </>
         ) : (
           <>
