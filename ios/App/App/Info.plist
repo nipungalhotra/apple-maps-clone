@@ -28,21 +28,15 @@
 	<false/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<true/>
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>location</string>
-	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>RoadReady uses your location while the app is open to find nearby practice grounds and show your position on the map.</string>
+	<!-- Required by @capacitor/geolocation (ion-ios-geolocation links background APIs). The app never
+	     requests "Always" access, so this prompt is not shown; wording matches the when-in-use string. -->
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>RoadReady uses background location for turn-by-turn voice directions during practice drives.</string>
-	<key>NSLocationAlwaysUsageDescription</key>
-	<string>RoadReady uses background location for turn-by-turn voice directions during practice drives.</string>
+	<string>RoadReady uses your location while the app is open to find nearby practice grounds and show your position on the map.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
