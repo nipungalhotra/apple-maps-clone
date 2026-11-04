@@ -34,6 +34,10 @@ RoadReady works as a polished **demo/prototype**. It is not a production product
 | 8 | Vulnerable deps | ✅ Fixed: `npm audit` reports 0 vulnerabilities (maplibre-gl 5 → 6.16, with the worker bundled by Vite) |
 | 9 | Apple trademark / ID mismatch | ✅ Fixed: the app is named RoadReady, the bundle/package ID is `com.roadready.app` on both platforms, the unused "Always" location permission is removed, and Siri/Apple Maps are removed from visible UI text |
 
+**After merging `main` (modular server):** the fixes above were moved into `server/routes/*`, with shared helpers in `server/lib/storage.js`. A new route lives at `server/routes/instructors.js`. CORS now uses `ALLOWED_ORIGINS` (`CORS_ORIGINS` is still accepted), and the server tests cover the new behavior.
+
+⚠️ **Still open from `main` and needs a decision:** iOS `NSAllowsArbitraryLoads` + `UIBackgroundModes: location` + "Always" location strings, and Android `usesCleartextTraffic="true"` + `ACCESS_BACKGROUND_LOCATION`. The app only reads location in the foreground (`useLocation` → `watchPosition`), so App Review may reject the background permissions. Arbitrary loads and cleartext also weaken transport security. These came in through a deliberate commit on `main` ("ATS/background crash" fix), so I kept them for now.
+
 Also hardened: input validation and length limits, a per-IP rate limit on writes, JSON body limit (16 KB), atomic file writes, CORS allowlist (`CORS_ORIGINS`), basic security headers, generic error responses, a JSON 404 for unknown `/api` routes, graceful shutdown, `server/storage/` removed from git, Capacitor `cleartext` off, and the duplicate CDN MapLibre CSS removed.
 
 ---

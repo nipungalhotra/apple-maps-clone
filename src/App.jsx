@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import AppleMap from './components/AppleMap';
+import MapErrorBoundary from './components/MapErrorBoundary';
 import DesktopSidebar from './components/DesktopSidebar';
 import MobileBottomSheet from './components/MobileBottomSheet';
 import NavigationHUD from './components/NavigationHUD';
 import DeviceModeBar from './components/DeviceModeBar';
-import LearnerProPaywallModal from './components/LearnerProPaywallModal';
-import OnboardingGuideModal from './components/OnboardingGuideModal';
+
+const LearnerProPaywallModal = lazy(() => import('./components/LearnerProPaywallModal'));
+const OnboardingGuideModal = lazy(() => import('./components/OnboardingGuideModal'));
 import { PRESET_PLACES } from './data/presetPlaces';
 import { LEARNER_ZONES } from './data/learnerZones';
 import { CONE_PRESETS } from './data/conePresets';
@@ -19,7 +21,12 @@ import { apiFetch } from './services/apiConfig';
 
 export default function App() {
   const [viewMode, setViewMode] = useState('desktop'); // 'desktop' | 'mobile' | 'responsive'
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
   const [is3D, setIs3D] = useState(false);
 
   // Locations & Routing State
@@ -66,6 +73,22 @@ export default function App() {
 
   // First-Time Visitor Visual Onboarding Guide State
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+
+  // Real-Time Online/Offline Connectivity Detection
+  const [isOffline, setIsOffline] = useState(() => typeof navigator !== 'undefined' ? !navigator.onLine : false);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   useEffect(() => {
     try {
@@ -114,7 +137,7 @@ export default function App() {
   // Favorites
   const [favorites, setFavorites] = useState([PRESET_PLACES[0], PRESET_PLACES[1]]);
 
-  // Sync Dark Mode class with root document
+  // Sync Dark Mode class with root document and system preference changes
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -122,6 +145,14 @@ export default function App() {
       document.documentElement.classList.remove('dark');
     }
   }, [isDarkMode]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (e) => setIsDarkMode(e.matches);
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
 
   // Debounced Search
   useEffect(() => {
@@ -299,28 +330,30 @@ export default function App() {
 
   const MapContent = (
     <div className="relative w-full h-full overflow-hidden select-none">
-      <AppleMap
-        center={selectedLearnerZone ? selectedLearnerZone.coordinates : selectedPlace ? selectedPlace.coordinates : userLocation}
-        zoom={selectedLearnerZone ? 16.5 : selectedPlace ? 15 : 13}
-        is3D={is3D}
-        routeData={routeData}
-        activeStepIndex={activeStepIndex}
-        selectedPlace={selectedPlace}
-        onMapClick={handleMapClick}
-        onSelectLearnerZone={handleSelectLearnerZone}
-        isNavigating={isNavigating}
-        userLocation={userLocation}
-        isDarkMode={isDarkMode}
-        learnerModeActive={activeMainTab === 'learner'}
-        selectedLearnerZone={selectedLearnerZone}
-        cones={cones}
-        onDropCone={handleDropCustomCone}
-        isDroppingCustomCone={isDroppingCustomCone}
-        activeDmvRoute={activeDmvRoute}
-        recenterTrigger={recenterTrigger}
-        learnerZones={learnerZones}
-        showTraffic={showTraffic}
-      />
+      <MapErrorBoundary>
+        <AppleMap
+          center={selectedLearnerZone ? selectedLearnerZone.coordinates : selectedPlace ? selectedPlace.coordinates : userLocation}
+          zoom={selectedLearnerZone ? 16.5 : selectedPlace ? 15 : 13}
+          is3D={is3D}
+          routeData={routeData}
+          activeStepIndex={activeStepIndex}
+          selectedPlace={selectedPlace}
+          onMapClick={handleMapClick}
+          onSelectLearnerZone={handleSelectLearnerZone}
+          isNavigating={isNavigating}
+          userLocation={userLocation}
+          isDarkMode={isDarkMode}
+          learnerModeActive={activeMainTab === 'learner'}
+          selectedLearnerZone={selectedLearnerZone}
+          cones={cones}
+          onDropCone={handleDropCustomCone}
+          isDroppingCustomCone={isDroppingCustomCone}
+          activeDmvRoute={activeDmvRoute}
+          recenterTrigger={recenterTrigger}
+          learnerZones={learnerZones}
+          showTraffic={showTraffic}
+        />
+      </MapErrorBoundary>
 
       {/* Top Device & View Controls */}
       <DeviceModeBar
@@ -336,6 +369,7 @@ export default function App() {
         isPro={isPro}
         onOpenPaywall={handleOpenPaywall}
         onOpenGuide={() => setIsOnboardingOpen(true)}
+        isOffline={isOffline}
       />
 
       {/* NAVIGATION ACTIVE HUD */}
@@ -443,7 +477,10 @@ export default function App() {
   );
 
   return (
-    <div className={`w-screen h-screen flex items-center justify-center ${isDarkMode ? 'dark bg-zinc-950' : 'bg-zinc-100'} transition-colors`}>
+    <div
+      className={`w-screen h-screen flex items-center justify-center ${isDarkMode ? 'dark bg-zinc-950 text-zinc-100' : 'bg-zinc-100 text-zinc-900'} transition-colors duration-200`}
+      style={{ backgroundColor: isDarkMode ? '#09090b' : '#f4f4f5' }}
+    >
       {viewMode === 'mobile' ? (
         <div className="relative w-[400px] h-[844px] rounded-[54px] bg-zinc-900 p-3 shadow-[0_25px_70px_rgba(0,0,0,0.55)] border-[5px] border-zinc-700/80 flex flex-col overflow-hidden">
           {/* Dynamic Island */}
@@ -480,19 +517,21 @@ export default function App() {
         </div>
       )}
       {/* B2C Learner PRO Pass Paywall Modal */}
-      <LearnerProPaywallModal
-        isOpen={isPaywallOpen}
-        onClose={() => setIsPaywallOpen(false)}
-        isPro={isPro}
-        onSubscriptionChange={handleSubscriptionChange}
-        highlightFeature={paywallFeature}
-      />
+      <Suspense fallback={null}>
+        <LearnerProPaywallModal
+          isOpen={isPaywallOpen}
+          onClose={() => setIsPaywallOpen(false)}
+          isPro={isPro}
+          onSubscriptionChange={handleSubscriptionChange}
+          highlightFeature={paywallFeature}
+        />
 
-      {/* Visual Onboarding & How-It-Works Guide Modal */}
-      <OnboardingGuideModal
-        isOpen={isOnboardingOpen}
-        onClose={() => setIsOnboardingOpen(false)}
-      />
+        {/* Visual Onboarding & How-It-Works Guide Modal */}
+        <OnboardingGuideModal
+          isOpen={isOnboardingOpen}
+          onClose={() => setIsOnboardingOpen(false)}
+        />
+      </Suspense>
     </div>
   );
 }

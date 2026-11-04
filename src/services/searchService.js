@@ -1,4 +1,5 @@
 import { PRESET_PLACES } from '../data/presetPlaces';
+import { API_ENDPOINTS } from '../config/mapConfig';
 
 /**
  * Searches places via local presets and public geocoding API
@@ -24,7 +25,7 @@ export async function searchLocations(query) {
 
   // Fallback to online geocoder (Photon / Komoot API - free OSM geocoder)
   try {
-    const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5`, {
+    const res = await fetch(`${API_ENDPOINTS.photonGeocoding}/?q=${encodeURIComponent(query)}&limit=5`, {
       signal: AbortSignal.timeout(4000)
     });
     if (res.ok) {

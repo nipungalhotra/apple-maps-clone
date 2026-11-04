@@ -4,15 +4,35 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 // MapLibre v6 runs its parser in a module worker; let Vite bundle it so the URL
 // resolves in dev, production builds and Capacitor WebViews.
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
-
-maplibregl.setWorkerUrl(maplibreWorkerUrl);
 import { LEARNER_ZONES } from '../data/learnerZones';
 import { apiFetch } from '../services/apiConfig';
+import { MAP_STYLES, FALLBACK_STYLES } from '../config/mapConfig';
+
+maplibregl.setWorkerUrl(maplibreWorkerUrl);
 
 // Escape untrusted text before interpolating into marker innerHTML (XSS guard).
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>"'`]/g, (ch) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;'
 }[ch]));
+
+const isValidCoord = (c) => (
+  Array.isArray(c) &&
+  c.length >= 2 &&
+  typeof c[0] === 'number' &&
+  typeof c[1] === 'number' &&
+  !isNaN(c[0]) &&
+  !isNaN(c[1])
+);
+
+const isWebGLAvailable = () => {
+  try {
+    if (typeof window === 'undefined') return true;
+    const canvas = document.createElement('canvas');
+    return !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+  } catch {
+    return false;
+  }
+};
 
 export default function AppleMap({
   center = [-122.4194, 37.7749],
@@ -44,28 +64,78 @@ export default function AppleMap({
   const destMarkerRef = useRef(null);
   const learnerMarkersRef = useRef([]);
   const coneMarkersRef = useRef([]);
+  const trafficIncidentMarkersRef = useRef([]);
   const learnerZonesRef = useRef(learnerZones);
+  const isDroppingCustomConeRef = useRef(isDroppingCustomCone);
+  const onDropConeRef = useRef(onDropCone);
+  const onMapClickRef = useRef(onMapClick);
+  const onSelectLearnerZoneRef = useRef(onSelectLearnerZone);
 
   useEffect(() => {
     learnerZonesRef.current = learnerZones;
   }, [learnerZones]);
 
+  useEffect(() => {
+    isDroppingCustomConeRef.current = isDroppingCustomCone;
+  }, [isDroppingCustomCone]);
+
+  useEffect(() => {
+    onDropConeRef.current = onDropCone;
+  }, [onDropCone]);
+
+  useEffect(() => {
+    onMapClickRef.current = onMapClick;
+  }, [onMapClick]);
+
+  useEffect(() => {
+    onSelectLearnerZoneRef.current = onSelectLearnerZone;
+  }, [onSelectLearnerZone]);
+
   // Initialize Map
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
 
-    const styleUrl = isDarkMode
-      ? 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
-      : 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
+    if (!isWebGLAvailable()) {
+      console.warn('WebGL is not supported or hardware acceleration is disabled.');
+    }
 
-    const map = new maplibregl.Map({
-      container: mapContainer.current,
-      style: styleUrl,
-      center: center,
-      zoom: zoom,
-      pitch: pitch,
-      bearing: bearing,
-      attributionControl: false
+    const safeCenter = isValidCoord(center) ? [center[0], center[1]] : [-122.4194, 37.7749];
+    const safeZoom = typeof zoom === 'number' && !isNaN(zoom) ? zoom : 13;
+    const safePitch = typeof pitch === 'number' && !isNaN(pitch) ? pitch : 0;
+    const safeBearing = typeof bearing === 'number' && !isNaN(bearing) ? bearing : 0;
+    const styleUrl = isDarkMode ? MAP_STYLES.dark : MAP_STYLES.light;
+
+    let map;
+    try {
+      map = new maplibregl.Map({
+        container: mapContainer.current,
+        style: styleUrl,
+        center: safeCenter,
+        zoom: safeZoom,
+        pitch: safePitch,
+        bearing: safeBearing,
+        attributionControl: false
+      });
+    } catch (err) {
+      console.warn('MapLibre primary initialization fallback triggered:', err);
+      map = new maplibregl.Map({
+        container: mapContainer.current,
+        style: isDarkMode ? FALLBACK_STYLES.dark : FALLBACK_STYLES.light,
+        center: safeCenter,
+        zoom: safeZoom,
+        pitch: safePitch,
+        bearing: safeBearing,
+        attributionControl: false
+      });
+    }
+
+    map.on('error', (e) => {
+      const msg = e?.error?.message || String(e);
+      console.warn('MapLibre runtime or tile loading notice:', msg);
+      if (msg.includes('401') || msg.includes('access token') || msg.includes('Unauthorized') || msg.includes('Forbidden')) {
+        console.warn('Mapbox token error detected, automatically reverting to open vector style');
+        map.setStyle(isDarkMode ? FALLBACK_STYLES.dark : FALLBACK_STYLES.light);
+      }
     });
 
     map.on('load', () => {
@@ -202,37 +272,52 @@ export default function AppleMap({
 
       // Click on Learner Polygons
       map.on('click', 'learner-zones-fill', (e) => {
-        if (e.features && e.features[0] && onSelectLearnerZone) {
+        if (e.features && e.features[0] && onSelectLearnerZoneRef.current) {
           const zoneId = e.features[0].properties.id;
           const currentPool = learnerZonesRef.current || [];
           const found = currentPool.find(z => z.id === zoneId);
-          if (found) onSelectLearnerZone(found);
+          if (found) onSelectLearnerZoneRef.current(found);
         }
       });
     });
 
     map.on('click', (e) => {
-      if (isDroppingCustomCone && onDropCone) {
-        onDropCone(e.lngLat.lng, e.lngLat.lat);
+      if (isDroppingCustomConeRef.current && onDropConeRef.current) {
+        onDropConeRef.current(e.lngLat.lng, e.lngLat.lat);
         return;
       }
       const features = map.queryRenderedFeatures(e.point, { layers: ['learner-zones-fill'] });
-      if (features.length === 0 && onMapClick) {
-        onMapClick([e.lngLat.lng, e.lngLat.lat]);
+      if (features.length === 0 && onMapClickRef.current) {
+        onMapClickRef.current([e.lngLat.lng, e.lngLat.lat]);
       }
     });
 
     mapRef.current = map;
 
     return () => {
+      if (userMarkerRef.current) {
+        userMarkerRef.current.remove();
+        userMarkerRef.current = null;
+      }
+      if (destMarkerRef.current) {
+        destMarkerRef.current.remove();
+        destMarkerRef.current = null;
+      }
+      learnerMarkersRef.current.forEach(m => m.remove());
+      learnerMarkersRef.current = [];
+      coneMarkersRef.current.forEach(m => m.remove());
+      coneMarkersRef.current = [];
+      trafficIncidentMarkersRef.current.forEach(m => m.remove());
+      trafficIncidentMarkersRef.current = [];
+
       map.remove();
       mapRef.current = null;
     };
-  }, [isDroppingCustomCone]);
+  }, [isDarkMode]);
 
   // Recenter Camera explicitly when recenterTrigger is fired
   useEffect(() => {
-    if (!mapRef.current || !userLocation || recenterTrigger === 0) return;
+    if (!mapRef.current || !isValidCoord(userLocation) || recenterTrigger === 0) return;
     mapRef.current.flyTo({
       center: userLocation,
       zoom: 16,
@@ -250,7 +335,7 @@ export default function AppleMap({
       destMarkerRef.current = null;
     }
 
-    if (selectedPlace && selectedPlace.coordinates) {
+    if (selectedPlace && isValidCoord(selectedPlace.coordinates)) {
       const el = document.createElement('div');
       el.className = 'selected-place-pin cursor-pointer group';
       el.innerHTML = `
@@ -340,6 +425,10 @@ export default function AppleMap({
     if (trafficLayer) mapRef.current.setLayoutProperty('traffic-line', 'visibility', visibility);
     if (trafficCasing) mapRef.current.setLayoutProperty('traffic-casing', 'visibility', visibility);
 
+    // Clear any existing incident markers
+    trafficIncidentMarkersRef.current.forEach(m => m.remove());
+    trafficIncidentMarkersRef.current = [];
+
     if (showTraffic) {
       const [lng, lat] = userLocation || [-122.4194, 37.7749];
       apiFetch(`/api/traffic?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}`)
@@ -347,6 +436,25 @@ export default function AppleMap({
           const source = mapRef.current?.getSource('traffic-lines');
           if (source && data?.features) {
             source.setData(data);
+          }
+
+          // Render Real-Time Traffic Incident Badges
+          if (mapRef.current && data?.incidents) {
+            data.incidents.forEach(inc => {
+              const el = document.createElement('div');
+              el.className = 'traffic-incident-marker cursor-pointer group transition-transform hover:scale-110';
+              el.innerHTML = `
+                <div class="flex items-center gap-1.5 px-2.5 py-1 bg-amber-500 text-white rounded-full text-[10px] font-black shadow-lg border border-white/40">
+                  <span>⚠️</span>
+                  <span>${escapeHtml(inc.title)}</span>
+                  <span class="bg-black/20 px-1 rounded-sm text-[9px]">+${escapeHtml(inc.delayMinutes)}m</span>
+                </div>
+              `;
+              const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
+                .setLngLat(inc.coordinates)
+                .addTo(mapRef.current);
+              trafficIncidentMarkersRef.current.push(marker);
+            });
           }
         })
         .catch(() => {
@@ -452,7 +560,7 @@ export default function AppleMap({
 
   // Camera animations for selected learner zone
   useEffect(() => {
-    if (!mapRef.current || !selectedLearnerZone || isNavigating || !learnerModeActive) return;
+    if (!mapRef.current || !selectedLearnerZone || !isValidCoord(selectedLearnerZone.coordinates) || isNavigating || !learnerModeActive) return;
     mapRef.current.flyTo({
       center: selectedLearnerZone.coordinates,
       zoom: 16.5,
@@ -485,15 +593,17 @@ export default function AppleMap({
         });
 
         if (!isNavigating) {
-          const coords = routeData.coordinates;
-          const bounds = coords.reduce(
-            (b, coord) => b.extend(coord),
-            new maplibregl.LngLatBounds(coords[0], coords[0])
-          );
-          mapRef.current.fitBounds(bounds, {
-            padding: { top: 90, bottom: 90, left: 380, right: 90 },
-            duration: 1200
-          });
+          const coords = (routeData.coordinates || []).filter(isValidCoord);
+          if (coords.length > 0) {
+            const bounds = coords.reduce(
+              (b, coord) => b.extend(coord),
+              new maplibregl.LngLatBounds(coords[0], coords[0])
+            );
+            mapRef.current.fitBounds(bounds, {
+              padding: { top: 90, bottom: 90, left: 380, right: 90 },
+              duration: 1200
+            });
+          }
         }
       } else {
         source.setData({
@@ -506,7 +616,7 @@ export default function AppleMap({
 
   // User puck
   useEffect(() => {
-    if (!mapRef.current || !userLocation) return;
+    if (!mapRef.current || !isValidCoord(userLocation)) return;
     if (!userMarkerRef.current) {
       const el = document.createElement('div');
       el.className = 'apple-user-location-puck';
@@ -529,7 +639,8 @@ export default function AppleMap({
   // Navigation tracking
   useEffect(() => {
     if (!mapRef.current || !isNavigating || !routeData) return;
-    const coords = routeData.coordinates;
+    const coords = (routeData.coordinates || []).filter(isValidCoord);
+    if (coords.length === 0) return;
     const currentCoord = coords[activeStepIndex] || coords[0];
 
     let heading = 0;
@@ -550,8 +661,21 @@ export default function AppleMap({
   }, [isNavigating, activeStepIndex, routeData]);
 
   return (
-    <div className="relative w-full h-full overflow-hidden">
-      <div ref={mapContainer} className="w-full h-full" />
+    <div
+      className={`relative w-full h-full overflow-hidden transition-colors duration-200 ${
+        isDarkMode ? 'bg-zinc-950 text-white' : 'bg-zinc-100 text-zinc-900'
+      }`}
+      style={{ backgroundColor: isDarkMode ? '#09090b' : '#f4f4f5' }}
+      role="region"
+      aria-label="RoadReady Interactive Practice Map"
+    >
+      <div
+        ref={mapContainer}
+        className="w-full h-full focus:outline-none"
+        style={{ backgroundColor: isDarkMode ? '#09090b' : '#f4f4f5' }}
+        tabIndex={0}
+        aria-label="Interactive Map Surface"
+      />
     </div>
   );
 }

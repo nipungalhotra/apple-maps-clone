@@ -85,15 +85,21 @@ export default function MobileBottomSheet({
       {/* Draggable Notch Handle */}
       <div
         onClick={cycleSheetState}
-        className="w-full flex flex-col items-center pt-2.5 pb-1.5 cursor-grab active:cursor-grabbing hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+        role="button"
+        tabIndex={0}
+        aria-label="Toggle mobile bottom sheet height (peek, half, full)"
+        className="w-full flex flex-col items-center pt-2.5 pb-1.5 cursor-grab active:cursor-grabbing hover:bg-black/5 dark:hover:bg-white/5 transition-colors focus:outline-none"
       >
         <div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-600 mb-1"></div>
       </div>
 
       {/* Main Mode Toggle: Explore vs Learner */}
       <div className="px-4 pb-2">
-        <div className="grid grid-cols-2 gap-1 p-1 bg-black/5 dark:bg-white/10 rounded-xl mb-2">
+        <div className="grid grid-cols-2 gap-1 p-1 bg-black/5 dark:bg-white/10 rounded-xl mb-2" role="tablist" aria-label="Mobile Navigation Modes">
           <button
+            role="tab"
+            aria-selected={activeMainTab === 'explore'}
+            aria-label="Explore map"
             onClick={() => {
               setActiveMainTab('explore');
               if (sheetState === 'peek') setSheetState('half');
@@ -109,6 +115,9 @@ export default function MobileBottomSheet({
           </button>
 
           <button
+            role="tab"
+            aria-selected={activeMainTab === 'learner'}
+            aria-label="Switch to RoadReady Driver Practice Mode"
             onClick={() => {
               setActiveMainTab('learner');
               setSheetState('half');
@@ -134,11 +143,13 @@ export default function MobileBottomSheet({
               onFocus={() => { if (sheetState === 'peek') setSheetState('half'); }}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search Maps"
+              aria-label="Search maps and locations"
               className="w-full pl-10 pr-9 py-2 text-sm bg-black/5 dark:bg-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-apple-blue/50 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 font-medium"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
+                aria-label="Clear search input"
                 className="absolute right-3 p-1 rounded-full text-zinc-400 hover:text-zinc-600"
               >
                 <X className="w-4 h-4" />

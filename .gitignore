@@ -25,3 +25,8 @@ dist-ssr
 
 # Runtime API data (never commit)
 server/storage/
+
+# Environment variables
+.env
+.env.*
+!.env.example

@@ -1,0 +1,188 @@
+openapi: 3.0.3
+info:
+  title: RoadReady REST API
+  description: Production-grade REST API powering the RoadReady safe driving grounds, real-time traffic telemetry, and DMV test preparation platform.
+  version: 1.0.0
+servers:
+  - url: http://127.0.0.1:3001
+    description: Local / Docker production server
+paths:
+  /api/health:
+    get:
+      summary: Health Check
+      description: Returns service health, uptime, and current environment.
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  service:
+                    type: string
+                    example: Apple Maps Learner Engine Backend
+                  uptimeSeconds:
+                    type: integer
+                    example: 3600
+                  timestamp:
+                    type: string
+                    format: date-time
+                  environment:
+                    type: string
+                    example: production
+
+  /api/traffic:
+    get:
+      summary: Real-Time Traffic & Incidents
+      description: Returns synthesized traffic vectors and active incidents for the given coordinates.
+      parameters:
+        - name: lat
+          in: query
+          schema:
+            type: number
+            default: 37.7749
+        - name: lng
+          in: query
+          schema:
+            type: number
+            default: -122.4194
+      responses:
+        '200':
+          description: GeoJSON FeatureCollection of traffic segments and list of incidents.
+
+  /api/passport:
+    get:
+      summary: Get Driver Passport
+      description: Retrieves logged practice hours, targets, and unlocked milestone badges.
+      responses:
+        '200':
+          description: Passport data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Passport'
+
+  /api/passport/log:
+    post:
+      summary: Log Driving Hour
+      description: Logs certified driving hours toward Form DL-50HRS.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                hours:
+                  type: number
+                  default: 1
+                isNight:
+                  type: boolean
+                  default: false
+                isHighway:
+                  type: boolean
+                  default: false
+      responses:
+        '200':
+          description: Hour logged successfully.
+
+  /api/community-reports:
+    get:
+      summary: List Ground Reports
+      parameters:
+        - name: zoneId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of reports.
+    post:
+      summary: Submit Ground Report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommunityReportInput'
+      responses:
+        '201':
+          description: Report created.
+        '400':
+          description: Invalid input or missing fields.
+
+  /api/subscription:
+    get:
+      summary: Get Subscription Status
+      responses:
+        '200':
+          description: Current subscription details.
+
+  /api/subscription/upgrade:
+    post:
+      summary: Upgrade to Pro
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tier:
+                  type: string
+                  example: lifetime
+                price:
+                  type: number
+                  example: 29.99
+      responses:
+        '200':
+          description: Subscription upgraded.
+
+components:
+  schemas:
+    Passport:
+      type: object
+      properties:
+        loggedHours:
+          type: number
+          example: 18
+        targetHours:
+          type: number
+          example: 50
+        nightHours:
+          type: number
+          example: 5
+        highwayHours:
+          type: number
+          example: 3
+        badges:
+          type: array
+          items:
+            type: string
+          example: ["First Ignition", "Cone Wizard"]
+
+    CommunityReportInput:
+      type: object
+      required:
+        - zoneId
+        - notes
+      properties:
+        zoneId:
+          type: string
+          example: candlestick-open-ground
+        author:
+          type: string
+          example: Marcus V.
+        status:
+          type: string
+          example: Gate Open
+        surface:
+          type: string
+          example: Clean
+        notes:
+          type: string
+          example: Completely empty right now.
