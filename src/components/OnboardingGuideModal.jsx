@@ -29,20 +29,18 @@ export default function OnboardingGuideModal({
           {/* Safe Zone Polygon Simulation */}
           <div className="relative z-10 w-4/5 h-28 rounded-2xl bg-emerald-500/20 border-2 border-dashed border-emerald-400 flex flex-col items-center justify-center text-center p-2 shadow-lg backdrop-blur-xs">
             <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-500 text-white px-2 py-0.5 rounded-full mb-1">
-              🟢 Safe Zone • Candlestick Civic Lot
+              🟢 Practice spot • Candlestick Point
             </span>
             <div className="text-xs font-bold text-white flex items-center gap-1.5">
               <span>65m Open Width</span>
-              <span>•</span>
-              <span className="text-emerald-300">0.1 cars/min</span>
             </div>
             <p className="text-[10px] text-zinc-300 mt-0.5">
-              Ideal Practice: 2:00 PM – 6:00 PM (Low Traffic)
+              Usually quiet: weekday afternoons
             </p>
           </div>
 
           <div className="absolute top-2 right-2 px-2 py-0.5 bg-black/60 rounded-full text-[9px] text-emerald-400 font-mono">
-            Within 2.1 km of GPS
+            Example spot
           </div>
         </div>
       ),
@@ -156,8 +154,8 @@ export default function OnboardingGuideModal({
           </div>
 
           <div className="flex items-center justify-between text-[10px] text-zinc-400">
-            <span>Parent Affidavit Included</span>
-            <span className="text-amber-400 font-bold">Examiner Stamp Box Ready</span>
+            <span>Supervisor sign-off lines</span>
+            <span className="text-amber-400 font-bold">Personal record</span>
           </div>
         </div>
       ),

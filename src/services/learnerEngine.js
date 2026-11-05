@@ -178,6 +178,11 @@ export function evaluateLocationSafety({
   };
 }
 
+/** Map centre used until the person shares their location (central San Francisco). */
+export const DEFAULT_LOCATION = [-122.4194, 37.7749];
+export const isDefaultLocation = (coord) =>
+  Array.isArray(coord) && coord[0] === DEFAULT_LOCATION[0] && coord[1] === DEFAULT_LOCATION[1];
+
 /** Radius (km) around San Francisco covered by the curated, hand-verified zone list. */
 export const VERIFIED_COVERAGE_RADIUS_KM = 25;
 

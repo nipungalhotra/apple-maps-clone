@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { isDefaultLocation } from '../services/learnerEngine';
 import {
   Search, X, Navigation as NavIcon, Car, Footprints, Bike,
   Share2, Heart, Phone, Globe, Clock, Star, Compass, Utensils,
@@ -372,10 +373,12 @@ export default function DesktopSidebar({
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-apple-blue dark:text-blue-400">
-                    Current Location
+                    {isDefaultLocation(userLocation) ? 'Use my location' : 'Your location'}
                   </h4>
                   <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                    GPS • Lat {userLocation[1].toFixed(3)}°, Lng {userLocation[0].toFixed(3)}°
+                    {isDefaultLocation(userLocation)
+                      ? 'Showing central San Francisco until you share it'
+                      : `GPS • ${userLocation[1].toFixed(3)}°, ${userLocation[0].toFixed(3)}°`}
                   </p>
                 </div>
               </div>

@@ -5,7 +5,7 @@ import {
   Eye, Check, XCircle, CloudRain, Sun, Moon, MessageSquare, Plus,
   Trophy, Activity, Send, Lock, Zap
 } from 'lucide-react';
-import { getFilteredLearnerZones, getDrillsForVehicle, evaluateLocationSafety } from '../services/learnerEngine';
+import { getFilteredLearnerZones, getDrillsForVehicle, evaluateLocationSafety, isDefaultLocation } from '../services/learnerEngine';
 import { WEATHER_CONDITIONS, calculateWeatherAdjustedSafety } from '../services/weatherSafetyService';
 import { canAccessZone } from '../services/subscriptionService';
 import { apiFetch } from '../services/apiConfig';
@@ -191,7 +191,7 @@ export default function LearnerModePanel({
           {/* Passport Logbook Button */}
           <button
             onClick={() => setIsPassportOpen(true)}
-            aria-label={`Open practice log (${loggedHours} hours logged)`}
+            aria-label={`Open practice log (${loggedHours} ${loggedHours === 1 ? 'hour' : 'hours'} logged)`}
             className="flex items-center gap-1 px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl shadow-md transition-all active:scale-95"
           >
             <Trophy className="w-3.5 h-3.5" />
@@ -384,10 +384,10 @@ export default function LearnerModePanel({
             <div className="flex items-center justify-between px-3 py-1.5 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-xl text-xs text-emerald-800 dark:text-emerald-300 font-bold border border-emerald-500/20">
               <span className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                {zones.length} Practice Spots Near You
+                {zones.length} Practice Spots
               </span>
               <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 dark:bg-emerald-500/30 px-2 py-0.5 rounded-md">
-                Within 5 km
+                {isDefaultLocation(userLocation) ? 'Distances from central SF' : 'Nearest first'}
               </span>
             </div>
 
@@ -459,7 +459,7 @@ export default function LearnerModePanel({
 
                   {isLocked && (
                     <div className="mt-2 pt-1.5 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] text-amber-600">
-                      <span>🔒 Unlock all 5 km practice grounds with PRO</span>
+                      <span>🔒 Unlock every practice spot with PRO</span>
                       <ChevronRight className="w-3.5 h-3.5" />
                     </div>
                   )}

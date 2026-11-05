@@ -108,7 +108,7 @@ export default function LearnerProPaywallModal({
     {
       feature: 'Ground Discovery',
       free: '2 Nearest Safe Zones',
-      pro: 'Unlimited Discovery (All 5 km radius grounds)',
+      pro: 'Every practice spot unlocked',
       highlight: highlightFeature === 'grounds'
     },
     {
@@ -330,7 +330,7 @@ export default function LearnerProPaywallModal({
             </div>
             <h3 className="text-xl font-black">Learner PRO Activated!</h3>
             <p className="text-xs text-white/90 mt-1">
-              All 5 km practice grounds, custom cones, DMV voice examiner, and printable practice log unlocked.
+              Every practice spot, custom cones, the practice road test and the printable practice log are unlocked.
             </p>
           </div>
         )}

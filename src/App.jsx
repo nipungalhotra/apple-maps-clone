@@ -24,7 +24,17 @@ import { trackAppOpen } from './services/analytics';
 import { apiFetch, resetClientId } from './services/apiConfig';
 
 export default function App() {
-  const [viewMode, setViewMode] = useState('desktop'); // 'desktop' | 'mobile' | 'responsive'
+  // 'responsive' follows the real screen size. 'desktop' / 'mobile' (iPhone frame) are
+  // developer previews, reachable only from the switcher shown in development builds.
+  const [viewMode, setViewMode] = useState('responsive'); // 'desktop' | 'mobile' | 'responsive'
+  const [isNarrowScreen, setIsNarrowScreen] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth < 768
+  );
+  useEffect(() => {
+    const onResize = () => setIsNarrowScreen(window.innerWidth < 768);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined' && window.matchMedia) {
       return window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -47,7 +57,8 @@ export default function App() {
   }, [userLocation]);
 
   // Learner Engine State
-  const [activeMainTab, setActiveMainTab] = useState('explore'); // 'explore' | 'learner'
+  // Learner features are the product, so they open first.
+  const [activeMainTab, setActiveMainTab] = useState('learner'); // 'explore' | 'learner'
   const [selectedLearnerZone, setSelectedLearnerZone] = useState(null);
 
   // Virtual Cones State
@@ -214,7 +225,22 @@ export default function App() {
   const [simSpeed, setSimSpeed] = useState(1);
 
   // Favorites
-  const [favorites, setFavorites] = useState([PRESET_PLACES[0], PRESET_PLACES[1]]);
+  // Saved places, kept on this device. New users start with none.
+  const [favorites, setFavorites] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('roadready_favorites') || '[]');
+      return Array.isArray(saved) ? saved.filter((p) => p && typeof p.id === 'string').slice(0, 100) : [];
+    } catch {
+      return [];
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem('roadready_favorites', JSON.stringify(favorites));
+    } catch {
+      // storage unavailable: favourites last for this visit only
+    }
+  }, [favorites]);
 
   // Sync Dark Mode class with root document and system preference changes
   useEffect(() => {
@@ -273,13 +299,17 @@ export default function App() {
   const handleStartDmvTestDrive = (dmvRoute) => {
     setActiveDmvRoute(dmvRoute);
     const coords = dmvRoute.pathCoordinates;
+    // Spread the route's real length and time across its checkpoints (no placeholder distances).
+    const legCount = Math.max(1, dmvRoute.checkpoints.length);
+    const legMeters = (dmvRoute.distanceMiles * 1609.34) / legCount;
+    const legSeconds = (dmvRoute.durationMins * 60) / legCount;
     const steps = dmvRoute.checkpoints.map((cp, i) => ({
       id: cp.id,
       instruction: `Examiner Evaluation: ${cp.instruction}`,
       maneuverType: 'turn',
       modifier: i % 2 === 0 ? 'right' : 'left',
-      distance: 600,
-      duration: 180,
+      distance: legMeters,
+      duration: legSeconds,
       name: cp.title
     }));
 
@@ -402,7 +432,7 @@ export default function App() {
     }
   };
 
-  const isMobileLayout = viewMode === 'mobile' || (viewMode === 'responsive' && window.innerWidth < 768);
+  const isMobileLayout = viewMode === 'mobile' || (viewMode === 'responsive' && isNarrowScreen);
 
   const MapContent = (
     <div className="relative w-full h-full overflow-hidden select-none">

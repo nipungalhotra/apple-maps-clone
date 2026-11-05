@@ -18,14 +18,26 @@ test.describe('RoadReady End-to-End Application Flows', () => {
     await expect(page.locator('.maplibregl-ctrl-attrib')).toBeAttached();
   });
 
-  test('DeviceModeBar switches to the mobile layout', async ({ page }) => {
-    const mobileButton = page.getByRole('button', { name: 'Switch to iOS iPhone Mobile Simulator' });
-    await expect(mobileButton).toBeVisible();
-    await mobileButton.click();
-    await expect(page.locator('input[placeholder*="Search"]').first()).toBeVisible();
+  test('Learner practice features open first', async ({ page }) => {
+    await expect(page.getByRole('tab', { name: 'Switch to RoadReady Learner Driver Mode' })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('button', { name: /Practice Spots/ })).toBeVisible();
+  });
+
+  test('Developer device switcher is not shown to customers', async ({ page }) => {
+    await expect(page.getByRole('group', { name: 'Device Viewport Switcher' })).toHaveCount(0);
+  });
+
+  test('Phone-sized screens get the phone layout without sideways scrolling', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.reload();
+    await expect(page.getByRole('tablist', { name: 'Mobile Navigation Modes' })).toBeVisible();
+    await expect(page.getByRole('tablist', { name: 'Main Navigation Tabs' })).toHaveCount(0);
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
   });
 
   test('Search input filters preset places', async ({ page }) => {
+    await page.getByRole('tab', { name: 'Explore map' }).click();
     const searchInput = page.locator('input[placeholder*="Search"]').first();
     await expect(searchInput).toBeVisible();
     await searchInput.fill('Golden');
