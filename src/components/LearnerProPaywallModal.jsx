@@ -10,7 +10,8 @@ export default function LearnerProPaywallModal({
   onClose,
   isPro,
   onSubscriptionChange,
-  highlightFeature = null
+  highlightFeature = null,
+  onRequireSignIn = () => {}
 }) {
   const [selectedPlan, setSelectedPlan] = useState('lifetime'); // 'lifetime' | 'monthly'
   const [isProcessing, setIsProcessing] = useState(false);
@@ -31,6 +32,10 @@ export default function LearnerProPaywallModal({
         onClose();
       }, 1200);
     } catch (err) {
+      if (err?.code === 'sign_in_required') {
+        onRequireSignIn();
+        return;
+      }
       setUpgradeError(
         err?.status === 501
           ? 'Purchases are not available yet. Please check back soon.'

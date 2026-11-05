@@ -1,5 +1,5 @@
 import React from 'react';
-import { Monitor, Smartphone, Maximize2, Sun, Moon, Layers, Locate, Car, Zap, HelpCircle, WifiOff } from 'lucide-react';
+import { Monitor, Smartphone, Maximize2, Sun, Moon, Layers, Locate, Car, Zap, HelpCircle, WifiOff, UserRound } from 'lucide-react';
 
 export default function DeviceModeBar({
   viewMode,
@@ -14,7 +14,10 @@ export default function DeviceModeBar({
   isPro = false,
   onOpenPaywall = () => {},
   onOpenGuide = () => {},
-  isOffline = false
+  isOffline = false,
+  accountsEnabled = false,
+  accountEmail = '',
+  onOpenAccount = () => {}
 }) {
   return (
     <div className="absolute top-4 right-4 z-30 flex flex-col items-end gap-2">
@@ -25,6 +28,30 @@ export default function DeviceModeBar({
             <WifiOff className="w-3.5 h-3.5" />
             <span>Offline (Cached Maps)</span>
           </div>
+        )}
+
+        {/* Account */}
+        {accountsEnabled && (
+          accountEmail ? (
+            <button
+              onClick={onOpenAccount}
+              title={`Signed in as ${accountEmail}`}
+              aria-label={`Account: signed in as ${accountEmail}`}
+              className="w-8 h-8 rounded-full bg-apple-blue text-white text-xs font-black uppercase flex items-center justify-center shadow-md active:scale-95 transition-all"
+            >
+              {accountEmail.charAt(0)}
+            </button>
+          ) : (
+            <button
+              onClick={onOpenAccount}
+              title="Sign in or create an account"
+              aria-label="Sign in or create an account"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-white/80 dark:bg-zinc-800/80 text-zinc-800 dark:text-zinc-100 backdrop-blur-xl shadow-apple-pill border border-black/5 dark:border-white/10 active:scale-95 transition-all"
+            >
+              <UserRound className="w-3.5 h-3.5" />
+              <span>Sign in</span>
+            </button>
+          )
         )}
 
         {/* B2C Pro Pass Quick Button */}

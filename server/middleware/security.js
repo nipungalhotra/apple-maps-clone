@@ -5,6 +5,12 @@ import cors from 'cors';
 /**
  * Helmet Content Security Policy & Security Headers
  */
+// The browser talks to Supabase Auth directly (sign-in, token refresh).
+const SUPABASE_ORIGINS = ['https://*.supabase.co', 'wss://*.supabase.co'];
+try {
+  if (process.env.SUPABASE_URL) SUPABASE_ORIGINS.push(new URL(process.env.SUPABASE_URL).origin);
+} catch { /* invalid URL is reported by the auth layer */ }
+
 export const helmetMiddleware = helmet({
   contentSecurityPolicy: {
     directives: {
@@ -13,7 +19,7 @@ export const helmetMiddleware = helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "blob:", "https://images.unsplash.com", "https://basemaps.cartocdn.com", "https://*.basemaps.cartocdn.com", "https://api.mapbox.com"],
-      connectSrc: ["'self'", "https://basemaps.cartocdn.com", "https://*.basemaps.cartocdn.com", "https://api.mapbox.com", "https://*.tiles.mapbox.com", "https://router.project-osrm.org", "https://photon.komoot.io"],
+      connectSrc: ["'self'", "https://basemaps.cartocdn.com", "https://*.basemaps.cartocdn.com", "https://api.mapbox.com", "https://*.tiles.mapbox.com", "https://router.project-osrm.org", "https://photon.komoot.io", ...SUPABASE_ORIGINS],
       workerSrc: ["'self'", "blob:"]
     }
   },

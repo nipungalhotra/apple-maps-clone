@@ -10,6 +10,9 @@ import reportsRoutes from './routes/reports.js';
 import subscriptionRoutes from './routes/subscription.js';
 import affiliatesRoutes from './routes/affiliates.js';
 import instructorsRoutes from './routes/instructors.js';
+import accountRoutes from './routes/account.js';
+import { getDb, query, closeDb } from './db/index.js';
+import { authConfigured } from './lib/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,10 +30,18 @@ app.use(express.json({ limit: '16kb' }));
 app.use('/api/', globalLimiter);
 
 // 2. Health Check
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
+app.get('/api/health', async (req, res) => {
+  let database = 'ok';
+  try {
+    await query('SELECT 1');
+  } catch {
+    database = 'unavailable';
+  }
+  res.status(database === 'ok' ? 200 : 503).json({
+    status: database === 'ok' ? 'ok' : 'degraded',
     service: 'RoadReady API',
+    database,
+    accounts: authConfigured ? 'enabled' : 'disabled',
     uptimeSeconds: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development'
@@ -44,6 +55,7 @@ app.use('/api/community-reports', reportsRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/affiliates', affiliatesRoutes);
 app.use('/api/instructors', instructorsRoutes);
+app.use('/api/account', accountRoutes);
 
 // Unknown API routes return JSON 404 (never the SPA HTML)
 app.use('/api', (req, res) => {
@@ -74,12 +86,23 @@ app.use((err, req, res, next) => {
 
 // 6. Start Listener (skipped under tests, which import the app directly)
 if (process.env.NODE_ENV !== 'test') {
-  const server = app.listen(PORT, HOST, () => {
-    console.log(`[RoadReady API] listening on http://${HOST}:${PORT} (${process.env.NODE_ENV || 'development'})`);
-  });
-  const shutdown = () => server.close(() => process.exit(0));
-  process.on('SIGTERM', shutdown);
-  process.on('SIGINT', shutdown);
+  if (process.env.NODE_ENV === 'production' && !authConfigured) {
+    console.warn('[RoadReady API] SUPABASE_URL is not set: accounts are disabled and everyone is a guest.');
+  }
+  // Connect and run migrations before accepting traffic; exit if the database is unreachable.
+  getDb()
+    .then((db) => {
+      const server = app.listen(PORT, HOST, () => {
+        console.log(`[RoadReady API] listening on http://${HOST}:${PORT} (${process.env.NODE_ENV || 'development'}, db: ${db.kind})`);
+      });
+      const shutdown = () => server.close(() => closeDb().finally(() => process.exit(0)));
+      process.on('SIGTERM', shutdown);
+      process.on('SIGINT', shutdown);
+    })
+    .catch((err) => {
+      console.error('[RoadReady API] Database startup failed:', err.message);
+      process.exit(1);
+    });
 }
 
 export { app };

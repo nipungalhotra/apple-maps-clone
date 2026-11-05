@@ -1,3 +1,5 @@
+import { getAccessToken } from './authService';
+
 // Centralized API configuration.
 // - Web dev: relative /api (proxied by Vite to the local server).
 // - Production web & native apps: set VITE_API_BASE_URL to the deployed API origin
@@ -11,8 +13,8 @@ export const apiUrl = (endpoint) => {
   return `${API_BASE_URL}${cleanEndpoint}`;
 };
 
-// Anonymous per-device identifier used to scope passport/subscription data.
-// This is NOT authentication; replace with real auth before handling sensitive data.
+// Anonymous per-device identifier. Guests (no account) are identified by it; after
+// sign-in it is used once to move the guest's data into the account.
 const CLIENT_ID_KEY = 'roadready_client_id';
 let memoryClientId = null;
 
@@ -37,6 +39,15 @@ export function getClientId() {
   }
 }
 
+export function resetClientId() {
+  memoryClientId = null;
+  try {
+    localStorage.removeItem(CLIENT_ID_KEY);
+  } catch {
+    // ignore
+  }
+}
+
 export class ApiError extends Error {
   constructor(message, status) {
     super(message);
@@ -46,13 +57,19 @@ export class ApiError extends Error {
 }
 
 /**
- * fetch wrapper: resolves the API base URL, sends JSON + client id,
- * enforces a timeout, and throws ApiError on non-2xx or non-JSON responses.
+ * fetch wrapper: resolves the API base URL, sends JSON, the device id and (when
+ * signed in) the account's access token, enforces a timeout, and throws ApiError
+ * on non-2xx or non-JSON responses.
  */
 export async function apiFetch(endpoint, { method = 'GET', body, timeoutMs = 8000, headers = {} } = {}) {
+  const token = await getAccessToken();
   const init = {
     method,
-    headers: { 'X-Client-Id': getClientId(), ...headers },
+    headers: {
+      'X-Client-Id': getClientId(),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...headers
+    },
     signal: AbortSignal.timeout(timeoutMs)
   };
   if (body !== undefined) {
@@ -67,7 +84,9 @@ export async function apiFetch(endpoint, { method = 'GET', body, timeoutMs = 800
   }
   const data = await res.json();
   if (!res.ok) {
-    throw new ApiError(data?.error || `Request failed (${res.status})`, res.status);
+    const err = new ApiError(data?.error || `Request failed (${res.status})`, res.status);
+    err.code = data?.code;
+    throw err;
   }
   return data;
 }
