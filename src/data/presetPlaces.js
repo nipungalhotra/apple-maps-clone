@@ -1,17 +1,5 @@
 export const PRESET_PLACES = [
   {
-    id: 'apple-park',
-    name: 'Apple Park',
-    subtitle: '1 Apple Park Way, Cupertino, CA',
-    category: 'Landmark',
-    coordinates: [-122.0090, 37.3349],
-    priceLevel: 'Free',
-    phone: '+1 (408) 996-1010',
-    website: 'https://www.apple.com',
-    description: "Apple's corporate headquarters featuring the iconic circular ring design, Steve Jobs Theater, and the public Visitor Center with augmented reality experiences.",
-    amenities: ['Wheelchair accessible', 'Restrooms', 'Apple Store', 'Caffè Macs', 'EV Charging']
-  },
-  {
     id: 'golden-gate',
     name: 'Golden Gate Bridge',
     subtitle: 'San Francisco, CA 94129',

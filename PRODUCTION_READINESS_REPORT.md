@@ -52,6 +52,15 @@ RoadReady works as a polished **demo/prototype**. It is not a production product
 - "98% Safe" labels, now an explicitly estimated beginner rating with a disclaimer
 - false "live" traffic and weather claims
 
+✅ **User-journey fixes:**
+- phones get the phone layout automatically (they used to get the desktop layout, cut off)
+- the developer device-frame switcher is hidden in production
+- the learner features open first, with no "Apple Park" suggestion and no pre-saved favourites (favourites now persist)
+- "Current Location" no longer claims San Francisco is the user's location
+- "Within 5 km" no longer shows next to spots 7–9 km away
+- mock-test checkpoints show real distances
+- the onboarding illustrations drop invented figures and features
+
 Also hardened: input validation and length limits, a per-IP rate limit on writes, JSON body limit (16 KB), atomic file writes, CORS allowlist (`CORS_ORIGINS`), basic security headers, generic error responses, a JSON 404 for unknown `/api` routes, graceful shutdown, `server/storage/` removed from git, Capacitor `cleartext` off, and the duplicate CDN MapLibre CSS removed.
 
 ---

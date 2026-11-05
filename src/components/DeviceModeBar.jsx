@@ -1,6 +1,8 @@
 import React from 'react';
 import { Monitor, Smartphone, Maximize2, Sun, Moon, Layers, Locate, Car, Zap, HelpCircle, WifiOff, UserRound } from 'lucide-react';
 
+const SHOW_DEVICE_SWITCHER = import.meta.env.DEV || import.meta.env.VITE_SHOW_DEVICE_SWITCHER === 'true';
+
 export default function DeviceModeBar({
   viewMode,
   setViewMode,
@@ -76,7 +78,8 @@ export default function DeviceModeBar({
           </button>
         )}
 
-        {/* Device Mode Switcher Pill */}
+        {/* Device preview switcher: development builds only, never shown to customers */}
+        {SHOW_DEVICE_SWITCHER && (
         <div className="flex items-center p-1 bg-white/80 dark:bg-zinc-800/80 backdrop-blur-xl rounded-full shadow-apple-pill border border-black/5 dark:border-white/10" role="group" aria-label="Device Viewport Switcher">
           <button
             onClick={() => setViewMode('desktop')}
@@ -119,6 +122,7 @@ export default function DeviceModeBar({
             <Maximize2 className="w-3.5 h-3.5" />
           </button>
         </div>
+        )}
 
         {/* Map Control Utilities */}
         <div className="flex items-center p-1 bg-white/80 dark:bg-zinc-800/80 backdrop-blur-xl rounded-full shadow-apple-pill border border-black/5 dark:border-white/10" role="group" aria-label="Map Visual Controls">
