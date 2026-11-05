@@ -35,23 +35,19 @@
 - **iPhone 16 Pro Frame Simulator:** Built-in mobile chassis with Dynamic Island, Status Bar, and Home Indicator.
 
 ### 🔰 Safe Practice Grounds & Navigation
-- **Local Practice Ground Discovery:** Dynamically locates spacious parking lots and low-traffic practice routes within 5 km of any GPS coordinate.
+- **Practice Spots:** Hand-picked empty lots and quiet roads (San Francisco area for now), each with a beginner rating that is our estimate, not a safety guarantee.
 - **Virtual Traffic Cone Courses:** Drop parallel parking bays, reverse 90° docking, and slalom drills onto open pavement with zero risk to vehicles.
-- **Live Traffic Facility:** Real-time congestion vectors and flow rate status.
-- **Dynamic Weather Braking:** Real-time wet asphalt stopping distance telemetry and safety alerts.
+- **Estimated Traffic Overlay:** A simulated busy/quiet guide (not live traffic data).
+- **Weather Practice Modes:** Switch between dry, wet and night to see how stopping distances change.
 
 ### 🎖️ DMV Road Test Simulator
 - **Practice Test Routes:** Turn-by-turn navigation along routes modelled on typical DMV road tests (not official DMV routes).
 - **Voice Guidance:** Spoken examiner-style instructions and evaluation checkpoints.
-- **Road Test Scoring:** Live point-deduction tracking against state passing thresholds.
+- **Practice Scoring:** Point deductions as you go through the route's checkpoints.
 
 ### 📄 Personal 50-Hour Practice Log
 - **Practice Hour Tracking:** Tracks total, night and highway practice hours. Synced to your account when signed in.
 - **Printable Worksheet:** A personal worksheet to help fill in your state's official supervised-driving form. It is not an official or certified DMV document.
-
-### 👨‍🏫 1-on-1 Driving Coach Marketplace
-- **Local Instructors:** Browse behind-the-wheel instructors (sample listings for now).
-- **Booking Requests:** Package selection and meeting location; the instructor must confirm (instructor notifications are not built yet).
 
 ---
 

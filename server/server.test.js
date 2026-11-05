@@ -327,44 +327,15 @@ describe('RoadReady Express API Endpoints', () => {
     });
   });
 
-  describe('affiliate leads', () => {
-    it('tracks clicks without echoing lead data', async () => {
-      const res = await request(app).post('/api/affiliates/insurance-click').send({ partnerId: 'geico', driverAge: 17 });
-      expect(res.status).toBe(201);
-      expect(res.body).not.toHaveProperty('trackingRecord');
-    });
-
-    it('requires the admin token to read leads', async () => {
-      const denied = await request(app).get('/api/affiliates/insurance-clicks');
-      expect(denied.status).toBe(401);
-      const ok = await request(app)
-        .get('/api/affiliates/insurance-clicks')
-        .set('Authorization', 'Bearer test-admin-token-123');
-      expect(ok.status).toBe(200);
-      expect(ok.body[0].partnerId).toBe('geico');
-    });
-  });
-
-  describe('instructor booking', () => {
-    it('rejects incomplete bookings', async () => {
-      const res = await request(app).post('/api/instructors/book').send({});
-      expect(res.status).toBe(400);
-    });
-
-    it('accepts a valid booking request without storing permit numbers', async () => {
-      const res = await request(app).post('/api/instructors/book').send({
-        instructorId: 'i1',
-        packageId: 'p1',
-        studentName: 'Test Student',
-        studentPhone: '415 555 0100',
-        studentPermit: 'D1234567',
-        timeSlot: 'Mon 3pm'
-      });
-      expect(res.status).toBe(201);
-      expect(res.body.booking.status).toBe('requested');
-      const { rows } = await db.query('SELECT * FROM roadready.instructor_bookings WHERE id = $1', [res.body.booking.id]);
-      expect(rows).toHaveLength(1);
-      expect(JSON.stringify(rows[0])).not.toContain('D1234567');
+  describe('removed sample features', () => {
+    // The instructor marketplace and insurance offers had no real instructors or partners behind them.
+    it('no longer accepts instructor bookings or insurance lead clicks', async () => {
+      const booking = await request(app).post('/api/instructors/book').send({ instructorId: 'i1' });
+      expect(booking.status).toBe(404);
+      const click = await request(app).post('/api/affiliates/insurance-click').send({ partnerId: 'geico' });
+      expect(click.status).toBe(404);
+      const leads = await request(app).get('/api/affiliates/insurance-clicks').set('Authorization', 'Bearer test-admin-token-123');
+      expect(leads.status).toBe(404);
     });
   });
 });

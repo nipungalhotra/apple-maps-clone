@@ -271,14 +271,18 @@ export default function MobileBottomSheet({
               <div>
                 <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{selectedPlace.name}</h2>
                 <p className="text-xs text-zinc-400">{selectedPlace.subtitle}</p>
-                <div className="flex items-center gap-1.5 text-xs pt-1 font-semibold">
-                  <span className="flex items-center gap-0.5 text-amber-500">
-                    <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                    {selectedPlace.rating}
-                  </span>
-                  <span className="text-zinc-400">•</span>
-                  <span className="text-apple-green">{selectedPlace.hours}</span>
-                </div>
+                {(selectedPlace.rating || selectedPlace.hours) && (
+                  <div className="flex items-center gap-1.5 text-xs pt-1 font-semibold">
+                    {selectedPlace.rating && (
+                      <span className="flex items-center gap-0.5 text-amber-500">
+                        <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                        {selectedPlace.rating}
+                      </span>
+                    )}
+                    {selectedPlace.rating && selectedPlace.hours && <span className="text-zinc-400">•</span>}
+                    {selectedPlace.hours && <span className="text-apple-green">{selectedPlace.hours}</span>}
+                  </div>
+                )}
               </div>
               <button
                 onClick={() => setSelectedPlace(null)}

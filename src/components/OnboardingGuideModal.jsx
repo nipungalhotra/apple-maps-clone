@@ -17,8 +17,8 @@ export default function OnboardingGuideModal({
     {
       id: 'step-1',
       tag: 'Step 1 • Ground Discovery',
-      title: 'Find Safe, Empty Parking Lots Near You',
-      subtitle: 'Zero traffic anxiety. Practice starts, turns, and braking safely.',
+      title: 'Find Quiet, Empty Practice Spots',
+      subtitle: 'Less traffic stress. Practice starts, turns, and braking in open space.',
       color: 'from-emerald-600 to-teal-700',
       badgeColor: 'bg-emerald-500/20 text-emerald-300',
       illustration: (
@@ -46,7 +46,7 @@ export default function OnboardingGuideModal({
           </div>
         </div>
       ),
-      description: 'RoadReady continuously scans satellite geometry and real-time road conditions to highlight spacious, empty parking lots and quiet boulevards within 5 km of your location.'
+      description: 'RoadReady highlights hand-picked empty parking lots and quiet roads, starting with the San Francisco area, with tips on when each one is usually quiet.'
     },
     {
       id: 'step-2',

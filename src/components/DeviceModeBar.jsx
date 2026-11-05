@@ -122,11 +122,11 @@ export default function DeviceModeBar({
 
         {/* Map Control Utilities */}
         <div className="flex items-center p-1 bg-white/80 dark:bg-zinc-800/80 backdrop-blur-xl rounded-full shadow-apple-pill border border-black/5 dark:border-white/10" role="group" aria-label="Map Visual Controls">
-          {/* Live Traffic Overlay Toggle */}
+          {/* Traffic overlay toggle (simulated estimate, not live data) */}
           <button
             onClick={() => setShowTraffic(!showTraffic)}
-            title="Toggle Live Traffic Facility"
-            aria-label="Toggle Live Traffic Facility Overlay"
+            title="Show estimated traffic (simulated, not live)"
+            aria-label="Show estimated traffic overlay (simulated, not live)"
             className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-bold transition-all ${
               showTraffic
                 ? 'bg-emerald-500 text-white shadow-sm'
@@ -187,7 +187,7 @@ export default function DeviceModeBar({
       {/* Floating Traffic Facility Legend */}
       {showTraffic && (
         <div className="flex items-center gap-2.5 px-3 py-1.5 bg-white/90 dark:bg-zinc-800/90 backdrop-blur-xl rounded-2xl shadow-apple-card border border-black/5 dark:border-white/10 text-[10px] font-bold text-zinc-700 dark:text-zinc-300 animate-slideDown">
-          <span className="text-zinc-400 font-normal uppercase tracking-wider">Traffic</span>
+          <span className="text-zinc-400 font-normal uppercase tracking-wider">Est. traffic (not live)</span>
           <div className="flex items-center gap-1">
             <span className="w-2.5 h-2.5 rounded-full bg-[#34C759]"></span>
             <span>Fast</span>
