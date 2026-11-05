@@ -18,7 +18,8 @@ let db;
 beforeAll(async () => {
   ({ default: app } = await import('./index.js'));
   db = await import('./db/index.js');
-});
+  await db.getDb(); // start the in-memory database and run migrations before any test
+}, 60_000);
 afterAll(async () => {
   await db?.closeDb();
 });
