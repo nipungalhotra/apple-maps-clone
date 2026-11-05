@@ -83,6 +83,15 @@ describe('event collection', () => {
   });
 });
 
+describe('install prompt events', () => {
+  it('accepts install_prompt with its result only', async () => {
+    const clientId = device();
+    expect((await send(clientId, { name: 'install_prompt', props: { result: 'accepted', other: 'x' } })).status).toBe(204);
+    const { rows } = await db.query('SELECT props FROM roadready.analytics_events WHERE visitor_id = $1', [analytics.hashVisitor(clientId)]);
+    expect(rows[0].props).toEqual({ result: 'accepted' });
+  });
+});
+
 describe('business metrics', () => {
   it('are admin-only', async () => {
     expect((await request(app).get('/api/admin/metrics')).status).toBe(401);

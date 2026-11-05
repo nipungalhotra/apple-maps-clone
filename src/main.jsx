@@ -44,8 +44,10 @@ function RootErrorFallback({ error, resetErrorBoundary }) {
   );
 }
 
-// Register PWA Service Worker for Offline Basemap & Asset Caching
-if (typeof window !== 'undefined' && 'serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+// Service worker: makes the website installable to the home screen and usable offline.
+// Production web only (not in dev, not inside the native Capacitor shells).
+const isNativeShell = typeof window !== 'undefined' && window.Capacitor?.isNativePlatform?.();
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator && import.meta.env.PROD && !isNativeShell) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch((err) => {
       console.warn('PWA service worker registration failed:', err);

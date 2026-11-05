@@ -100,6 +100,12 @@ export default function LearnerPassportModal({
                 {loggedHours} / {targetHours} hrs
               </span>
             </div>
+            <a
+              href="/guides/california-learner-permit-practice-hours/"
+              className="inline-block text-[11px] font-semibold text-amber-700 dark:text-amber-300 underline underline-offset-2"
+            >
+              California&rsquo;s rules: 50 hours, 10 at night &rarr;
+            </a>
 
             {/* Progress Bar */}
             <div className="w-full h-3 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden p-0.5">
