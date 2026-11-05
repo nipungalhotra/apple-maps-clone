@@ -44,6 +44,14 @@ RoadReady works as a polished **demo/prototype**. It is not a production product
 - **Map attribution** is restored (compact "© OpenStreetMap contributors © CARTO").
 - **Lead export exposure and `npm audit`** were already fixed with the P0 work.
 
+✅ **Sample and made-up content removed:**
+- the instructor marketplace (invented instructors with fake phone and licence numbers) and its booking endpoint
+- the insurance offers (real insurers' brands with no affiliate deals) and their lead-tracking endpoints
+- seeded community reviews
+- invented ratings, review counts, opening hours and stock photos on places
+- "98% Safe" labels, now an explicitly estimated beginner rating with a disclaimer
+- false "live" traffic and weather claims
+
 Also hardened: input validation and length limits, a per-IP rate limit on writes, JSON body limit (16 KB), atomic file writes, CORS allowlist (`CORS_ORIGINS`), basic security headers, generic error responses, a JSON 404 for unknown `/api` routes, graceful shutdown, `server/storage/` removed from git, Capacitor `cleartext` off, and the duplicate CDN MapLibre CSS removed.
 
 ---

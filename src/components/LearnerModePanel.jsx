@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import { getFilteredLearnerZones, getDrillsForVehicle, evaluateLocationSafety } from '../services/learnerEngine';
 import { WEATHER_CONDITIONS, calculateWeatherAdjustedSafety } from '../services/weatherSafetyService';
-import { INITIAL_COMMUNITY_REPORTS } from '../data/communityReports';
 import { canAccessZone } from '../services/subscriptionService';
 import { apiFetch } from '../services/apiConfig';
 
@@ -66,7 +65,8 @@ export default function LearnerModePanel({
   const [isPassportOpen, setIsPassportOpen] = useState(false);
 
   // Community Reports local and backend state
-  const [communityReports, setCommunityReports] = useState(INITIAL_COMMUNITY_REPORTS);
+  // Real reports only, loaded from the server (no seeded examples).
+  const [communityReports, setCommunityReports] = useState({});
   const [newReportText, setNewReportText] = useState('');
   const [newGateStatus, setNewGateStatus] = useState('Open');
 
@@ -183,7 +183,7 @@ export default function LearnerModePanel({
                 )}
               </h3>
               <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                Safe grounds, virtual cones, DMV tests, & live weather
+                Practice spots, virtual cones, test routes & weather modes
               </p>
             </div>
           </div>
@@ -191,6 +191,7 @@ export default function LearnerModePanel({
           {/* Passport Logbook Button */}
           <button
             onClick={() => setIsPassportOpen(true)}
+            aria-label={`Open practice log (${loggedHours} hours logged)`}
             className="flex items-center gap-1 px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl shadow-md transition-all active:scale-95"
           >
             <Trophy className="w-3.5 h-3.5" />
@@ -297,7 +298,7 @@ export default function LearnerModePanel({
       {/* Main Tabs Navigation Bar */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-black/5 dark:border-white/10 no-scrollbar">
         {[
-          { id: 'zones', label: `Safe Zones (${zones.length})` },
+          { id: 'zones', label: `Practice Spots (${zones.length})` },
           { id: 'cones', label: `Virtual Cones (${cones.length}) ▲` },
           { id: 'dmv', label: 'DMV Mock Test 🎖️' },
           { id: 'pipeline', label: 'Safety Pipeline 🎛️' },
@@ -334,11 +335,16 @@ export default function LearnerModePanel({
                 </div>
                 <div className="text-right">
                   <div className="text-xl font-black text-emerald-600">
-                    {weatherAdjustment?.adjustedScore || selectedLearnerZone.safetyScore}%
+                    {weatherAdjustment?.adjustedScore || selectedLearnerZone.safetyScore}/100
                   </div>
-                  <div className="text-[10px] text-zinc-400 font-bold">Safety Score</div>
+                  <div className="text-[10px] text-zinc-400 font-bold">Beginner rating (our estimate)</div>
                 </div>
               </div>
+
+              <p className="text-[10px] leading-snug text-zinc-500 dark:text-zinc-400">
+                Our rating of how suitable this spot is for beginners. It is not a safety guarantee: check signs and
+                access rules before you drive, and always practice with a licensed supervising driver.
+              </p>
 
               {/* Quick Metrics */}
               <div className="grid grid-cols-2 gap-2 text-xs">
@@ -378,7 +384,7 @@ export default function LearnerModePanel({
             <div className="flex items-center justify-between px-3 py-1.5 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-xl text-xs text-emerald-800 dark:text-emerald-300 font-bold border border-emerald-500/20">
               <span className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                {zones.length} Safe Grounds Found Near You
+                {zones.length} Practice Spots Near You
               </span>
               <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 dark:bg-emerald-500/30 px-2 py-0.5 rounded-md">
                 Within 5 km
@@ -431,8 +437,11 @@ export default function LearnerModePanel({
                           <span>Unlock</span>
                         </div>
                       ) : (
-                        <span className="text-xs font-black text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full shrink-0">
-                          {zone.dynamicScore}%
+                        <span
+                          className="text-xs font-black text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full shrink-0"
+                          title="Beginner rating (our estimate, not a safety guarantee)"
+                        >
+                          {zone.dynamicScore}/100
                         </span>
                       )}
                     </div>
@@ -498,8 +507,8 @@ export default function LearnerModePanel({
                 <h4 className="text-sm font-black text-zinc-900 dark:text-zinc-100">{activeZone.name}</h4>
               </div>
               <div className="text-right">
-                <span className="text-lg font-black text-emerald-600">{baseEvaluation.finalScore}%</span>
-                <span className="text-[10px] text-zinc-400 block font-bold">5-Stage Score</span>
+                <span className="text-lg font-black text-emerald-600">{baseEvaluation.finalScore}/100</span>
+                <span className="text-[10px] text-zinc-400 block font-bold">Beginner rating (estimate)</span>
               </div>
             </div>
 

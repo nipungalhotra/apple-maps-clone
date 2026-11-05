@@ -386,10 +386,7 @@ export default function App() {
       subtitle: `${coords[1].toFixed(4)}° N, ${coords[0].toFixed(4)}° W`,
       category: 'Marked Location',
       coordinates: coords,
-      rating: 5.0,
-      reviewsCount: 1,
       priceLevel: 'Free',
-      hours: 'Open 24 hours',
       description: 'Custom coordinates selected on the map.',
       photos: []
     });

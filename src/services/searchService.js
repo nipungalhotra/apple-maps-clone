@@ -40,16 +40,8 @@ export async function searchLocations(query) {
           subtitle: subtitle || 'Search Result',
           category: props.osm_value ? props.osm_value.charAt(0).toUpperCase() + props.osm_value.slice(1) : 'Location',
           coordinates: f.geometry.coordinates,
-          rating: 4.6,
-          reviewsCount: 320,
           priceLevel: 'Free',
-          isOpen: true,
-          hours: 'Open today',
-          photos: [
-            'https://images.unsplash.com/photo-1477959858617-67f30bc75b82?auto=format&fit=crop&w=800&q=80'
-          ],
           description: `Located in ${subtitle}.`,
-          amenities: ['Public Access']
         };
       });
       if (geocoded.length > 0) {

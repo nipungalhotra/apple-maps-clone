@@ -537,7 +537,7 @@ export default function AppleMap({
               ? 'bg-apple-green text-white border-white scale-110'
               : 'bg-white/95 dark:bg-zinc-800/95 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
           } whitespace-nowrap transition-transform duration-200 group-hover:scale-110">
-            🛡️ ${escapeHtml(zone.safetyScore)}% Safe
+            ${escapeHtml(zone.difficulty || 'Practice spot')}
           </div>
           <div class="w-7 h-7 rounded-full flex items-center justify-center shadow-lg border-2 border-white ${
             zone.type === 'open_ground' ? 'bg-emerald-500' : 'bg-sky-500'

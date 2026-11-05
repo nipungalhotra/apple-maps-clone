@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Award, CheckCircle2, Clock, X, Sparkles, Shield, Trophy, FileText, Lock, Printer, ExternalLink } from 'lucide-react';
 import PrintableDmvLogModal from './PrintableDmvLogModal';
-import InsuranceSavingsModal from './InsuranceSavingsModal';
 
 export default function LearnerPassportModal({
   isOpen,
@@ -12,7 +11,6 @@ export default function LearnerPassportModal({
   onOpenPaywall
 }) {
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
-  const [isInsuranceModalOpen, setIsInsuranceModalOpen] = useState(false);
 
   if (!isOpen) return null;
 
@@ -96,7 +94,7 @@ export default function LearnerPassportModal({
           <div className="p-4 bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-transparent rounded-2xl border border-amber-500/20 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-amber-700 dark:text-amber-300">
-                State Licensing Requirement
+                Practice goal (many states ask for 50 hours; check yours)
               </span>
               <span className="text-base font-black text-amber-600 dark:text-amber-400">
                 {loggedHours} / {targetHours} hrs
@@ -165,30 +163,6 @@ export default function LearnerPassportModal({
             </button>
           </div>
 
-          {/* MODEL 3: AUTO INSURANCE AFFILIATE SAVINGS CARD */}
-          <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-cyan-500/10 border border-emerald-500/20 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow-md">
-                🛡️
-              </div>
-              <div>
-                <h4 className="text-xs font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-1">
-                  Save Up to $620/yr on Car Insurance
-                </h4>
-                <p className="text-[10px] text-zinc-400">
-                  Claim Good Driver & 50-Hour discounts ($50–$120 CPA)
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setIsInsuranceModalOpen(true)}
-              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all active:scale-95 whitespace-nowrap"
-            >
-              Compare
-            </button>
-          </div>
-
           {/* Badges Grid */}
           <div className="space-y-2">
             <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400 px-1">
@@ -230,12 +204,6 @@ export default function LearnerPassportModal({
         loggedHours={loggedHours}
       />
 
-      {/* Model 3: Insurance Savings Affiliate Modal */}
-      <InsuranceSavingsModal
-        isOpen={isInsuranceModalOpen}
-        onClose={() => setIsInsuranceModalOpen(false)}
-        loggedHours={loggedHours}
-      />
     </>
   );
 }

@@ -295,15 +295,21 @@ export default function DesktopSidebar({
               </h2>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">{selectedPlace.subtitle}</p>
 
-              <div className="flex items-center gap-2 text-xs pt-1">
-                <span className="flex items-center gap-1 font-bold text-amber-500">
-                  <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                  {selectedPlace.rating || '4.8'}
-                </span>
-                <span className="text-zinc-400">({selectedPlace.reviewsCount?.toLocaleString() || 120})</span>
-                <span className="text-zinc-400">•</span>
-                <span className="font-semibold text-apple-green">{selectedPlace.hours || 'Open'}</span>
-              </div>
+              {(selectedPlace.rating || selectedPlace.hours) && (
+                <div className="flex items-center gap-2 text-xs pt-1">
+                  {selectedPlace.rating && (
+                    <span className="flex items-center gap-1 font-bold text-amber-500">
+                      <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                      {selectedPlace.rating}
+                      {selectedPlace.reviewsCount && (
+                        <span className="text-zinc-400 font-normal">({selectedPlace.reviewsCount.toLocaleString()})</span>
+                      )}
+                    </span>
+                  )}
+                  {selectedPlace.rating && selectedPlace.hours && <span className="text-zinc-400">•</span>}
+                  {selectedPlace.hours && <span className="font-semibold text-apple-green">{selectedPlace.hours}</span>}
+                </div>
+              )}
             </div>
 
             {/* Action Buttons */}
