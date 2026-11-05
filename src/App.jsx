@@ -9,6 +9,7 @@ import DeviceModeBar from './components/DeviceModeBar';
 const LearnerProPaywallModal = lazy(() => import('./components/LearnerProPaywallModal'));
 const OnboardingGuideModal = lazy(() => import('./components/OnboardingGuideModal'));
 const AccountModal = lazy(() => import('./components/AccountModal'));
+const InstallPrompt = lazy(() => import('./components/InstallPrompt'));
 import { PRESET_PLACES } from './data/presetPlaces';
 import { LEARNER_ZONES } from './data/learnerZones';
 import { CONE_PRESETS } from './data/conePresets';
@@ -639,6 +640,9 @@ export default function App() {
             openAccount('signUp', 'Create a free account first, so your purchase can be restored on any device.');
           }}
         />
+
+        {/* Home-screen install suggestion: kept out of the way of other dialogs and navigation */}
+        <InstallPrompt suppressed={isOnboardingOpen || isPaywallOpen || isAccountOpen || isNavigating} />
 
         <AccountModal
           isOpen={isAccountOpen}

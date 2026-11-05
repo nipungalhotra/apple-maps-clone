@@ -124,6 +124,7 @@ npm run build    # Compiles production assets into /dist
 Local development needs no database setup: the API uses an embedded Postgres stored in `server/storage/pglite`.
 Accounts are off until you add Supabase settings; see **[Accounts and database](docs/ACCOUNTS_AND_DATABASE.md)**.
 Learner PRO is sold on the website at **$4.99/month** through Stripe; see **[Payments](docs/PAYMENTS.md)** (without Stripe keys, development uses a simulated checkout).
+It can be installed to the home screen from the website, and the build generates SEO guide pages under `/guides/`; see **[Growth](docs/GROWTH.md)**.
 The owner dashboard at **`/admin`** answers "is it making money?"; see **[Analytics](docs/ANALYTICS.md)**.
 
 ---

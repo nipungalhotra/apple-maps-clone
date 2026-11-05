@@ -20,8 +20,9 @@ let analytics;
 beforeAll(async () => {
   ({ default: app } = await import('./index.js'));
   db = await import('./db/index.js');
+  await db.getDb(); // start the in-memory database and run migrations before any test
   analytics = await import('./lib/analytics.js');
-});
+}, 60_000);
 afterAll(async () => {
   await db?.closeDb();
 });
@@ -79,6 +80,15 @@ describe('event collection', () => {
     expect(row.utm_source).toBe('tiktok');
     expect(row.device).toBe('mobile');
     expect(JSON.stringify(row)).not.toContain('kid@example.com');
+  });
+});
+
+describe('install prompt events', () => {
+  it('accepts install_prompt with its result only', async () => {
+    const clientId = device();
+    expect((await send(clientId, { name: 'install_prompt', props: { result: 'accepted', other: 'x' } })).status).toBe(204);
+    const { rows } = await db.query('SELECT props FROM roadready.analytics_events WHERE visitor_id = $1', [analytics.hashVisitor(clientId)]);
+    expect(rows[0].props).toEqual({ result: 'accepted' });
   });
 });
 

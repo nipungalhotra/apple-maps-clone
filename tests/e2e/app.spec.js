@@ -51,4 +51,22 @@ test.describe('RoadReady End-to-End Application Flows', () => {
     await page.getByRole('button', { name: 'Close', exact: true }).click();
     await expect(heading).toBeHidden();
   });
+
+  test('Site is installable: manifest with PNG icons and a service worker file', async ({ page, request }) => {
+    const manifestHref = await page.locator('link[rel="manifest"]').getAttribute('href');
+    const manifest = await (await request.get(manifestHref)).json();
+    expect(manifest.display).toBe('standalone');
+    const sizes = manifest.icons.filter((i) => i.type === 'image/png').map((i) => i.sizes);
+    expect(sizes).toEqual(expect.arrayContaining(['192x192', '512x512']));
+    for (const icon of manifest.icons) expect((await request.get(icon.src)).status()).toBe(200);
+    expect((await request.get('/sw.js')).status()).toBe(200);
+  });
+
+  test('California guide page is served as plain HTML and links into the app', async ({ page }) => {
+    await page.goto('/guides/california-learner-permit-practice-hours/');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('California learner');
+    await expect(page.getByText('50 hours with a licensed adult aged 25 or older')).toBeVisible();
+    const cta = page.getByRole('link', { name: 'Open RoadReady' }).first();
+    await expect(cta).toHaveAttribute('href', /utm_source=guide/);
+  });
 });

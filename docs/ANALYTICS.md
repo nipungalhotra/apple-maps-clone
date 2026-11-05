@@ -49,6 +49,7 @@ Untagged visits use the referring site (e.g. `google.com`). Visits with no refer
 | `paywall_view` | The paywall opens for a free user | which feature prompted it |
 | `signup_view` | The create-account screen opens | from the paywall or the menu |
 | `checkout_start` | Someone presses Subscribe | plan |
+| `install_prompt` | The add-to-home-screen suggestion is shown or answered | result (shown, ios_shown, accepted, declined, dismissed, installed) |
 
 Sign-ups, purchases and cancellations come from the accounts and payments tables, not from the browser, so they're exact.
 

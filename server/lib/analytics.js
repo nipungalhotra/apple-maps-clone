@@ -17,7 +17,8 @@ export const CLIENT_EVENTS = {
   app_open: [],
   paywall_view: ['feature'],
   checkout_start: ['plan'],
-  signup_view: ['source']
+  signup_view: ['source'],
+  install_prompt: ['result']
 };
 
 const DEVICES = new Set(['mobile', 'tablet', 'desktop']);
