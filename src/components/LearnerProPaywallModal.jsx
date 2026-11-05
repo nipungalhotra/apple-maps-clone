@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Sparkles, Check, X, ShieldCheck, Zap, Lock, Award, HeartHandshake,
   CreditCard, ArrowRight, ShieldAlert, CheckCircle2, Star, Car
 } from 'lucide-react';
-import { upgradeToPro, downgradeToFree } from '../services/subscriptionService';
+import { downgradeToFree } from '../services/subscriptionService';
+import {
+  purchasePlan, restorePurchases, manageSubscription, getPaymentsConfig, getStorePrices,
+  isNativeApp, TERMS_URL, PRIVACY_URL
+} from '../services/paymentsService';
 
 export default function LearnerProPaywallModal({
   isOpen,
@@ -11,40 +15,83 @@ export default function LearnerProPaywallModal({
   isPro,
   onSubscriptionChange,
   highlightFeature = null,
-  onRequireSignIn = () => {}
+  onRequireSignIn = () => {},
+  subscription = null
 }) {
   const [selectedPlan, setSelectedPlan] = useState('lifetime'); // 'lifetime' | 'monthly'
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [successToast, setSuccessToast] = useState(false);
   const [upgradeError, setUpgradeError] = useState('');
+  const [infoMessage, setInfoMessage] = useState('');
+  const [config, setConfig] = useState(null);
+  const [storePrices, setStorePrices] = useState(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setUpgradeError('');
+    setInfoMessage('');
+    getPaymentsConfig().then(setConfig).catch(() => {});
+    getStorePrices().then(setStorePrices).catch(() => {});
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleUpgrade = async (planToUse = selectedPlan) => {
+  // On iOS / Android the price shown must be the store's (localised) price.
+  const lifetimePrice = storePrices?.lifetime || '$29.99';
+  const monthlyPrice = storePrices?.monthly || '$4.99';
+  const showDevSwitch = Boolean(config?.simulated) && !config?.web?.stripe && !isNativeApp;
+  const paidBy = isNativeApp
+    ? (/android/i.test(navigator.userAgent) ? 'Google Play' : 'the App Store')
+    : config?.web?.stripe ? 'Stripe' : 'the test checkout (no real charge)';
+
+  const runAction = async (fn) => {
     setIsProcessing(true);
     setUpgradeError('');
+    setInfoMessage('');
     try {
-      const state = await upgradeToPro(planToUse);
-      setSuccessToast(true);
-      if (onSubscriptionChange) onSubscriptionChange(state);
-      setTimeout(() => {
-        setSuccessToast(false);
-        onClose();
-      }, 1200);
+      await fn();
     } catch (err) {
       if (err?.code === 'sign_in_required') {
         onRequireSignIn();
-        return;
+      } else if (err?.code === 'cancelled') {
+        // The person closed the store sheet; nothing to report.
+      } else if (err?.code === 'already_owned') {
+        setInfoMessage('You already have this plan.');
+      } else {
+        setUpgradeError(
+          err?.status === 501
+            ? 'Purchases are not available yet. Please check back soon.'
+            : (err?.message || 'Something went wrong. Please try again.')
+        );
       }
-      setUpgradeError(
-        err?.status === 501
-          ? 'Purchases are not available yet. Please check back soon.'
-          : (err?.message || 'Upgrade failed. Please try again.')
-      );
     } finally {
       setIsProcessing(false);
     }
   };
+
+  const handleUpgrade = (planToUse = selectedPlan) => runAction(async () => {
+    const result = await purchasePlan(planToUse);
+    if (result?.redirecting) {
+      setIsRedirecting(true); // leaving for Stripe Checkout
+      return;
+    }
+    if (!result?.isPro) throw new Error('We could not confirm the purchase. If you were charged, tap Restore purchases.');
+    setSuccessToast(true);
+    if (onSubscriptionChange) onSubscriptionChange(result);
+    setTimeout(() => {
+      setSuccessToast(false);
+      onClose();
+    }, 1200);
+  });
+
+  const handleRestore = () => runAction(async () => {
+    const result = await restorePurchases();
+    if (onSubscriptionChange) onSubscriptionChange(result);
+    setInfoMessage(result?.isPro ? 'Purchases restored. Learner PRO is active.' : 'No purchases found for this account.');
+  });
+
+  const handleManage = () => runAction(() => manageSubscription(subscription));
 
   const handleDowngrade = async () => {
     setIsProcessing(true);
@@ -62,9 +109,9 @@ export default function LearnerProPaywallModal({
       highlight: highlightFeature === 'grounds'
     },
     {
-      feature: 'Live Traffic Facility',
+      feature: 'Quiet-Hours Guide',
       free: 'Basic traffic status',
-      pro: 'Live Best-Practice Window & Flow Speeds',
+      pro: 'Suggested Quiet Practice Times (Estimated)',
       highlight: highlightFeature === 'traffic'
     },
     {
@@ -113,15 +160,12 @@ export default function LearnerProPaywallModal({
 
           <div className="flex items-center gap-2 mb-2">
             <span className="px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-md text-[10px] font-black uppercase tracking-wider text-white">
-              Model 1: B2C Pro Pass
-            </span>
-            <span className="flex items-center text-amber-200 text-xs font-bold gap-0.5">
-              <Star className="w-3.5 h-3.5 fill-amber-300" /> 4.9/5 (14,200+ Passes)
+              Learner PRO
             </span>
           </div>
 
           <h2 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight">
-            Pass Your DMV Test On The First Try.
+            Practice smarter for your road test.
           </h2>
           <p className="text-xs sm:text-sm text-white/90 mt-1 max-w-md">
             Unlock unlimited empty parking grounds, interactive examiner audio tests, virtual cones, and the printable 50-hour practice log.
@@ -141,7 +185,7 @@ export default function LearnerProPaywallModal({
               }`}
             >
               <div className="absolute -top-2.5 right-3 px-2 py-0.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-full text-[9px] font-black uppercase tracking-wider shadow-sm">
-                Save 60% • Best Value
+                Best Value
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black text-zinc-900 dark:text-zinc-100">Lifetime Pass</span>
@@ -150,11 +194,11 @@ export default function LearnerProPaywallModal({
                 </div>
               </div>
               <div className="mt-2">
-                <span className="text-2xl font-black text-zinc-900 dark:text-zinc-100">$29.99</span>
+                <span className="text-2xl font-black text-zinc-900 dark:text-zinc-100">{lifetimePrice}</span>
                 <span className="text-[11px] text-zinc-400 ml-1 font-medium">one-time</span>
               </div>
               <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1">
-                Full unlimited access forever. Never pay again.
+                Pay once. Yours to keep.
               </p>
             </div>
 
@@ -174,11 +218,11 @@ export default function LearnerProPaywallModal({
                 </div>
               </div>
               <div className="mt-2">
-                <span className="text-2xl font-black text-zinc-900 dark:text-zinc-100">$4.99</span>
+                <span className="text-2xl font-black text-zinc-900 dark:text-zinc-100">{monthlyPrice}</span>
                 <span className="text-[11px] text-zinc-400 ml-1 font-medium">/ month</span>
               </div>
               <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1">
-                Flexible practice. Cancel anytime in 1 tap.
+                Renews monthly. Cancel anytime.
               </p>
             </div>
           </div>
@@ -216,57 +260,104 @@ export default function LearnerProPaywallModal({
 
           {/* Actions & Payment CTA */}
           <div className="space-y-2 pt-1">
-            <button
-              onClick={() => handleUpgrade(selectedPlan)}
-              disabled={isProcessing}
-              className="w-full py-3.5 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-600 hover:opacity-95 text-white font-black text-sm rounded-2xl shadow-xl shadow-amber-500/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50"
-            >
-              {isProcessing ? (
-                <span>Unlocking Pro Access...</span>
-              ) : (
-                <>
-                  <Zap className="w-4 h-4 fill-white" />
-                  <span>
-                    Unlock Pro Access ({selectedPlan === 'lifetime' ? '$29.99 One-Time' : '$4.99/mo'})
-                  </span>
-                </>
-              )}
-            </button>
+            {isPro ? (
+              <div className="space-y-2">
+                <p className="text-sm font-black text-center text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4" />
+                  Learner PRO is active
+                  {subscription?.tier === 'monthly' && subscription?.expiresAt && (
+                    <span className="font-semibold text-zinc-500 dark:text-zinc-400">
+                      · {subscription.willRenew ? 'renews' : 'ends'} {new Date(subscription.expiresAt).toLocaleDateString()}
+                    </span>
+                  )}
+                </p>
+                {subscription?.manageVia && (
+                  <button
+                    onClick={handleManage}
+                    disabled={isProcessing}
+                    className="w-full py-3 rounded-2xl bg-black/5 dark:bg-white/10 text-sm font-bold text-zinc-800 dark:text-zinc-100 disabled:opacity-50"
+                  >
+                    Manage or cancel plan
+                  </button>
+                )}
+              </div>
+            ) : (
+              <button
+                onClick={() => handleUpgrade(selectedPlan)}
+                disabled={isProcessing || isRedirecting}
+                className="w-full py-3.5 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-600 hover:opacity-95 text-white font-black text-sm rounded-2xl shadow-xl shadow-amber-500/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50"
+              >
+                {isRedirecting ? (
+                  <span>Opening secure checkout…</span>
+                ) : isProcessing ? (
+                  <span>Processing…</span>
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4 fill-white" />
+                    <span>
+                      {selectedPlan === 'lifetime' ? `Get Lifetime Pass · ${lifetimePrice}` : `Subscribe · ${monthlyPrice}/month`}
+                    </span>
+                  </>
+                )}
+              </button>
+            )}
 
             {upgradeError && (
               <p role="alert" className="text-xs font-semibold text-center text-red-600 dark:text-red-400 bg-red-500/10 rounded-xl px-3 py-2">
                 {upgradeError}
               </p>
             )}
+            {infoMessage && (
+              <p role="status" className="text-xs font-semibold text-center text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 rounded-xl px-3 py-2">
+                {infoMessage}
+              </p>
+            )}
+
+            {/* Required purchase disclosures (App Store 3.1.2 / Google Play subscriptions policy) */}
+            {!isPro && (
+              <p className="text-[10px] leading-snug text-zinc-500 dark:text-zinc-400 text-center">
+                {selectedPlan === 'monthly'
+                  ? `Monthly Pass: ${monthlyPrice} charged each month through ${paidBy}. It renews automatically until you cancel, at least 24 hours before the renewal date. Cancel any time in your ${isNativeApp ? 'store account settings' : 'account'}.`
+                  : `Lifetime Pass: one payment of ${lifetimePrice} through ${paidBy}. No subscription.`}
+              </p>
+            )}
           </div>
 
-          {/* Guarantees & Developer Quick Toggle */}
-          <div className="flex items-center justify-between pt-2 border-t border-black/5 dark:border-white/5 text-[11px] text-zinc-400">
+          {/* Restore, legal links and payment note */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-black/5 dark:border-white/5 text-[11px] text-zinc-400">
             <span className="flex items-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-              100% Pass Guarantee or Refund
+              Secure payment by {paidBy}
             </span>
 
-            {/* Instant Toggle for Testing */}
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] text-zinc-400 font-mono">Dev Switch:</span>
-              {isPro ? (
-                <button
-                  onClick={handleDowngrade}
-                  className="text-[10px] font-bold text-rose-500 hover:underline"
-                >
-                  Reset to Free
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleUpgrade('lifetime')}
-                  className="text-[10px] font-bold text-emerald-600 hover:underline"
-                >
-                  ⚡ Instant Unlock PRO
-                </button>
+            <div className="flex items-center gap-3">
+              <button onClick={handleRestore} disabled={isProcessing} className="font-bold text-apple-blue hover:underline disabled:opacity-50">
+                Restore purchases
+              </button>
+              {TERMS_URL && (
+                <a href={TERMS_URL} target="_blank" rel="noopener noreferrer" className="hover:underline">Terms</a>
+              )}
+              {PRIVACY_URL && (
+                <a href={PRIVACY_URL} target="_blank" rel="noopener noreferrer" className="hover:underline">Privacy</a>
               )}
             </div>
           </div>
+
+          {/* Development only: simulated checkout (never shown when real payments are configured) */}
+          {showDevSwitch && (
+            <div className="flex items-center justify-end gap-2 text-[10px] text-zinc-400 font-mono">
+              <span>Dev only:</span>
+              {isPro ? (
+                <button onClick={handleDowngrade} className="font-bold text-rose-500 hover:underline">
+                  Reset simulated plan
+                </button>
+              ) : (
+                <button onClick={() => handleUpgrade('lifetime')} className="font-bold text-emerald-600 hover:underline">
+                  Simulate purchase
+                </button>
+              )}
+            </div>
+          )}
 
         </div>
 

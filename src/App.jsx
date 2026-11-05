@@ -19,6 +19,7 @@ import { siriVoice } from './services/voiceService';
 import { generateLearnerZonesForLocation } from './services/learnerEngine';
 import { getSubscriptionState, refreshSubscriptionState, clearSubscriptionCache } from './services/subscriptionService';
 import { accountsEnabled, getCurrentUser, onAuthChange } from './services/authService';
+import { handleCheckoutReturn, syncPurchasesUser } from './services/paymentsService';
 import { apiFetch, resetClientId } from './services/apiConfig';
 
 export default function App() {
@@ -145,9 +146,28 @@ export default function App() {
   useEffect(() => {
     let cancelled = false;
     getCurrentUser()
-      .then(user => { if (!cancelled) setAuthUser(user); })
+      .then(user => {
+        if (cancelled) return;
+        setAuthUser(user);
+        syncPurchasesUser(user?.id || null);
+      })
       .catch(() => {})
-      .finally(() => { if (!cancelled) refreshUserData(); });
+      .finally(() => {
+        if (cancelled) return;
+        refreshUserData();
+        // Back from Stripe Checkout: confirm the purchase and show the result.
+        handleCheckoutReturn().then((result) => {
+          if (cancelled || !result) return;
+          if (result.subscription) setSubState(result.subscription);
+          if (result.status === 'success') {
+            setPaywallFeature(null);
+            setIsPaywallOpen(true);
+          } else if (result.status === 'pending') {
+            // Payment still processing: check again once the webhook has had time to land.
+            setTimeout(() => refreshSubscriptionState().then(setSubState), 5000);
+          }
+        });
+      });
 
     const unsubscribe = onAuthChange(async (event, user) => {
       if (cancelled) return;
@@ -156,6 +176,7 @@ export default function App() {
       // that failed earlier, e.g. offline). Claiming is safe to repeat; it moves nothing twice.
       if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && user && claimedForUser.current !== user.id) {
         claimedForUser.current = user.id;
+        syncPurchasesUser(user.id);
         try {
           // Keep hours logged as a guest on this device by moving them into the account.
           await apiFetch('/api/account/claim', { method: 'POST', body: {} });
@@ -168,6 +189,7 @@ export default function App() {
         claimedForUser.current = null;
         // Start a fresh guest identity so the next person on this device begins empty.
         resetClientId();
+        syncPurchasesUser(null);
         setSubState(clearSubscriptionCache());
         setLoggedHours(0);
         refreshUserData();
@@ -582,6 +604,7 @@ export default function App() {
           isPro={isPro}
           onSubscriptionChange={handleSubscriptionChange}
           highlightFeature={paywallFeature}
+          subscription={subState}
           onRequireSignIn={() => {
             setIsPaywallOpen(false);
             openAccount('signUp', 'Create a free account first, so your purchase can be restored on any device.');

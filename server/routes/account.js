@@ -4,7 +4,9 @@ import { identify, requireUser, deleteAuthUser } from '../lib/auth.js';
 import { query, tx } from '../db/index.js';
 import { sendServerError } from '../lib/validation.js';
 import { loadPassport } from './passport.js';
-import { loadSubscription } from './subscription.js';
+import { loadSubscription } from '../lib/entitlements.js';
+import { cancelSubscriptionFor, stripeConfigured } from '../lib/stripe.js';
+import { deleteRevenueCatUser } from '../lib/revenuecat.js';
 
 const router = express.Router();
 router.use(identify, requireUser);
@@ -47,15 +49,18 @@ router.post('/claim', writeLimiter, async (req, res) => {
       const logs = await q.query('UPDATE roadready.drive_logs SET owner_id = $1 WHERE owner_id = $2', [userOwner, guestOwner]);
       await q.query('UPDATE roadready.community_reports SET owner_id = $1 WHERE owner_id = $2', [userOwner, guestOwner]);
       await q.query('UPDATE roadready.instructor_bookings SET owner_id = $1 WHERE owner_id = $2', [userOwner, guestOwner]);
-      // A guest plan only moves across if the account has none; the account's own plan wins.
+      // A guest plan only moves across where the account has none from that provider.
       await q.query(
-        `INSERT INTO roadready.subscriptions (owner_id, tier, price, unlocked_at, expires_at, transaction_id, simulated, updated_at)
-         SELECT $1, tier, price, unlocked_at, expires_at, transaction_id, simulated, now()
-           FROM roadready.subscriptions WHERE owner_id = $2
-         ON CONFLICT (owner_id) DO NOTHING`,
+        `INSERT INTO roadready.entitlements
+           (owner_id, provider, plan, price, currency, unlocked_at, expires_at, will_renew, store,
+            external_customer_id, external_ref, updated_at)
+         SELECT $1, provider, plan, price, currency, unlocked_at, expires_at, will_renew, store,
+                external_customer_id, external_ref, now()
+           FROM roadready.entitlements WHERE owner_id = $2
+         ON CONFLICT (owner_id, provider) DO NOTHING`,
         [userOwner, guestOwner]
       );
-      await q.query('DELETE FROM roadready.subscriptions WHERE owner_id = $1', [guestOwner]);
+      await q.query('DELETE FROM roadready.entitlements WHERE owner_id = $1', [guestOwner]);
       return { driveLogs: logs.rowCount ?? logs.affectedRows ?? 0 };
     });
 
@@ -72,16 +77,31 @@ router.delete('/', writeLimiter, async (req, res) => {
     return res.status(503).json({ error: 'Account deletion is not configured on this server' });
   }
   const owner = req.ownerId;
+  // Stop future web charges first; if Stripe is unreachable, keep everything so the person can retry.
+  if (stripeConfigured) {
+    try {
+      await cancelSubscriptionFor(owner);
+    } catch (err) {
+      console.error('[api] Failed to cancel Stripe subscription:', err.message);
+      return res.status(502).json({ error: 'Could not cancel your monthly plan. Nothing was deleted; please try again.' });
+    }
+  }
   try {
     await tx(async (q) => {
       await q.query('DELETE FROM roadready.drive_logs WHERE owner_id = $1', [owner]);
-      await q.query('DELETE FROM roadready.subscriptions WHERE owner_id = $1', [owner]);
+      await q.query('DELETE FROM roadready.entitlements WHERE owner_id = $1', [owner]);
       await q.query('DELETE FROM roadready.community_reports WHERE owner_id = $1', [owner]);
       await q.query('DELETE FROM roadready.instructor_bookings WHERE owner_id = $1', [owner]);
       await q.query('DELETE FROM roadready.profiles WHERE user_id = $1', [req.user.id]);
     });
   } catch (err) {
     return sendServerError(res, 'Failed to delete account data', err);
+  }
+  try {
+    await deleteRevenueCatUser(req.user.id);
+  } catch (err) {
+    // Not fatal: RevenueCat keeps only the anonymous purchase record under this id.
+    console.error('[api] Failed to delete RevenueCat customer:', err.message);
   }
   try {
     await deleteAuthUser(req.user.id);
