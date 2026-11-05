@@ -92,6 +92,7 @@ router.delete('/', writeLimiter, async (req, res) => {
       await q.query('DELETE FROM roadready.entitlements WHERE owner_id = $1', [owner]);
       await q.query('DELETE FROM roadready.community_reports WHERE owner_id = $1', [owner]);
       await q.query('DELETE FROM roadready.instructor_bookings WHERE owner_id = $1', [owner]);
+      await q.query('DELETE FROM roadready.analytics_events WHERE user_id = $1', [req.user.id]);
       await q.query('DELETE FROM roadready.profiles WHERE user_id = $1', [req.user.id]);
     });
   } catch (err) {

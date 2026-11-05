@@ -2,6 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import { apiFetch, ApiError } from './apiConfig';
 import { accountsEnabled, getCurrentUser } from './authService';
 import { upgradeToPro, saveSubscriptionState, refreshSubscriptionState } from './subscriptionService';
+import { track } from './analytics';
 
 /**
  * How the app takes payment:
@@ -101,6 +102,7 @@ export async function purchasePlan(plan) {
   if (accountsEnabled && !(await getCurrentUser())) {
     throw codedError('Sign in to upgrade', 'sign_in_required');
   }
+  track('checkout_start', { plan });
 
   if (isNativeApp) {
     const Purchases = await purchases();

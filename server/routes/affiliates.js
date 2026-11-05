@@ -3,9 +3,8 @@ import crypto from 'crypto';
 import { writeLimiter } from '../middleware/security.js';
 import { query } from '../db/index.js';
 import { cleanString, sendServerError } from '../lib/validation.js';
+import { requireAdmin } from '../lib/adminAuth.js';
 
-// Token required to read affiliate lead data. Unset = endpoint disabled.
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN || '';
 
 const router = express.Router();
 
@@ -34,14 +33,7 @@ router.post('/insurance-click', writeLimiter, async (req, res) => {
 });
 
 // Admin-only: lead data is not public.
-router.get('/insurance-clicks', async (req, res) => {
-  const auth = req.get('Authorization') || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
-  const valid = ADMIN_TOKEN && token.length === ADMIN_TOKEN.length &&
-    crypto.timingSafeEqual(Buffer.from(token), Buffer.from(ADMIN_TOKEN));
-  if (!valid) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+router.get('/insurance-clicks', requireAdmin, async (req, res) => {
   try {
     const { rows } = await query(
       'SELECT * FROM roadready.insurance_clicks ORDER BY created_at DESC LIMIT 1000'

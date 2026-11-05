@@ -77,7 +77,9 @@ describe('payments config', () => {
     expect(res.status).toBe(200);
     expect(res.body.web.stripe).toBe(true);
     expect(res.body.native.revenuecat).toBe(true);
-    expect(res.body.plans.map((p) => p.id)).toEqual(['lifetime', 'monthly']);
+    expect(res.body.plans).toEqual([
+      { id: 'monthly', price: 4.99, currency: 'USD', interval: 'month', label: 'Learner PRO Monthly' }
+    ]);
   });
 });
 
@@ -93,28 +95,26 @@ describe('Stripe checkout', () => {
     expect(res.status).toBe(400);
   });
 
-  it('creates a one-time checkout for lifetime, tied to the account', async () => {
+  it('no longer sells the lifetime plan', async () => {
     const user = await newUser();
-    fakeStripe.checkout.sessions.create.mockResolvedValueOnce({ url: 'https://checkout.stripe.com/c/pay/test1' });
-    const res = await request(app).post('/api/payments/stripe/checkout').set(user.auth).send({ plan: 'lifetime', price: 0.01 });
-    expect(res.status).toBe(200);
-    expect(res.body.url).toBe('https://checkout.stripe.com/c/pay/test1');
-
-    const params = fakeStripe.checkout.sessions.create.mock.calls.at(-1)[0];
-    expect(params.mode).toBe('payment');
-    expect(params.line_items).toEqual([{ price: 'price_lifetime_test', quantity: 1 }]);
-    expect(params.client_reference_id).toBe(user.id);
-    expect(params.customer_email).toBe('buyer@example.com');
-    expect(params.success_url).toMatch(/^https:\/\/roadready\.test\/\?checkout=success/);
+    const res = await request(app).post('/api/payments/stripe/checkout').set(user.auth).send({ plan: 'lifetime' });
+    expect(res.status).toBe(400);
   });
 
-  it('creates a subscription checkout for monthly', async () => {
+  it('creates a $4.99/month subscription checkout tied to the account', async () => {
     const user = await newUser();
     fakeStripe.checkout.sessions.create.mockResolvedValueOnce({ url: 'https://checkout.stripe.com/c/pay/test2' });
-    await request(app).post('/api/payments/stripe/checkout').set(user.auth).send({ plan: 'monthly' });
+    const res = await request(app).post('/api/payments/stripe/checkout').set(user.auth).send({ plan: 'monthly', price: 0.01 });
+    expect(res.status).toBe(200);
+    expect(res.body.url).toBe('https://checkout.stripe.com/c/pay/test2');
+
     const params = fakeStripe.checkout.sessions.create.mock.calls.at(-1)[0];
     expect(params.mode).toBe('subscription');
+    expect(params.line_items).toEqual([{ price: 'price_monthly_test', quantity: 1 }]);
+    expect(params.client_reference_id).toBe(user.id);
+    expect(params.customer_email).toBe('buyer@example.com');
     expect(params.subscription_data.metadata.user_id).toBe(user.id);
+    expect(params.success_url).toMatch(/^https:\/\/roadready\.test\/\?checkout=success/);
   });
 });
 
@@ -128,7 +128,7 @@ describe('Stripe webhook', () => {
     expect(res.status).toBe(400);
   });
 
-  it('grants lifetime Pro on a paid checkout, once per event', async () => {
+  it('still honours a paid one-time (earlier lifetime) checkout, once per event', async () => {
     const user = await newUser();
     const session = {
       id: 'cs_test_life', mode: 'payment', payment_status: 'paid', client_reference_id: user.id,

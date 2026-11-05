@@ -178,7 +178,7 @@ export default function LearnerModePanel({
                     className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-black flex items-center gap-1 shadow-sm transition-all"
                   >
                     <Zap className="w-2.5 h-2.5 fill-white" />
-                    <span>UPGRADE $29.99</span>
+                    <span>UPGRADE $4.99/mo</span>
                   </button>
                 )}
               </h3>

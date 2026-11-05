@@ -1,13 +1,15 @@
 import { query } from '../db/index.js';
 
 /**
- * Plans offered. Prices here are what the web checkout charges and what the
- * paywall shows on the web. App Store / Play prices are set in those stores
- * (and shown from RevenueCat), so keep them in sync by hand.
+ * Plans on sale. RoadReady is sold on the website through Stripe as a single
+ * $4.99/month subscription. The paywall reads this list from /api/payments/config,
+ * so adding a plan here (plus its Stripe price id) is all it takes to offer it.
+ *
+ * Existing "lifetime" entitlements (from earlier one-time purchases) keep working;
+ * lifetime is simply no longer offered.
  */
 export const PLANS = {
-  lifetime: { id: 'lifetime', price: 29.99, currency: 'USD', interval: null, label: 'Lifetime Pass' },
-  monthly: { id: 'monthly', price: 4.99, currency: 'USD', interval: 'month', label: 'Monthly Pass' }
+  monthly: { id: 'monthly', price: 4.99, currency: 'USD', interval: 'month', label: 'Learner PRO Monthly' }
 };
 
 export const isPlan = (plan) => typeof plan === 'string' && Object.hasOwn(PLANS, plan);

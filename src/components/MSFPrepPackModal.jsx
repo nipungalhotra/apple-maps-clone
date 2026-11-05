@@ -148,7 +148,7 @@ export default function MSFPrepPackModal({
                 </span>
               </div>
               <p className="text-[11px] text-zinc-400 mt-0.5">
-                Included Free in the <strong>$29.99 Learner Pro Lifetime Pass</strong>
+                Included in <strong>Learner PRO ($4.99/month)</strong>
               </p>
             </div>
 

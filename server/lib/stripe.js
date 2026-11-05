@@ -9,8 +9,8 @@ import { query } from '../db/index.js';
  * Env:
  *   STRIPE_SECRET_KEY        sk_live_... / sk_test_...
  *   STRIPE_WEBHOOK_SECRET    whsec_... for POST /api/payments/stripe/webhook
- *   STRIPE_PRICE_LIFETIME    price_... one-time price
- *   STRIPE_PRICE_MONTHLY     price_... recurring monthly price
+ *   STRIPE_PRICE_MONTHLY     price_... recurring $4.99/month price
+ *   STRIPE_PRICE_LIFETIME    optional; only if a one-time plan is added back to PLANS
  *   APP_URL                  web app origin for the return pages, e.g. https://roadready.app
  */
 const PRICE_IDS = {
@@ -18,8 +18,10 @@ const PRICE_IDS = {
   monthly: process.env.STRIPE_PRICE_MONTHLY || ''
 };
 
+// Every plan on sale needs a Stripe price id.
 export const stripeConfigured = Boolean(
-  process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET && PRICE_IDS.lifetime && PRICE_IDS.monthly
+  process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET &&
+  Object.keys(PLANS).every((plan) => PRICE_IDS[plan])
 );
 
 let client = null;
@@ -46,8 +48,9 @@ export async function createCheckoutSession({ user, plan, appUrl }) {
   const base = appUrl.replace(/\/+$/, '');
   const metadata = { user_id: user.id, plan };
 
+  const recurring = Boolean(PLANS[plan]?.interval);
   const params = {
-    mode: plan === 'monthly' ? 'subscription' : 'payment',
+    mode: recurring ? 'subscription' : 'payment',
     line_items: [{ price: PRICE_IDS[plan], quantity: 1 }],
     client_reference_id: user.id,
     metadata,
@@ -60,7 +63,7 @@ export async function createCheckoutSession({ user, plan, appUrl }) {
   } else if (user.email) {
     params.customer_email = user.email;
   }
-  if (plan === 'monthly') {
+  if (recurring) {
     params.subscription_data = { metadata };
   } else {
     params.payment_intent_data = { metadata };
@@ -94,12 +97,14 @@ export async function applyCheckoutSession(session) {
     return applySubscription(sub, userId);
   }
 
-  const plan = PLANS[session.metadata?.plan] ? session.metadata.plan : 'lifetime';
+  // One-time payments grant permanent access (no one-time plan is on sale today,
+  // but earlier lifetime purchases and manual payment links are still honoured).
+  const plan = 'lifetime';
   await upsertEntitlement({
     ownerId: owner,
     provider: 'stripe',
     plan,
-    price: typeof session.amount_total === 'number' ? session.amount_total / 100 : PLANS[plan].price,
+    price: typeof session.amount_total === 'number' ? session.amount_total / 100 : null,
     currency: (session.currency || 'usd').toUpperCase(),
     unlockedAt: new Date(),
     expiresAt: null,

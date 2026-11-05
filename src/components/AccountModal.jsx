@@ -4,6 +4,7 @@ import {
   accountsEnabled, signIn, signUp, signOut, sendPasswordReset, updatePassword
 } from '../services/authService';
 import { apiFetch } from '../services/apiConfig';
+import { track } from '../services/analytics';
 
 const MIN_PASSWORD = 8;
 
@@ -42,6 +43,11 @@ export default function AccountModal({
   const [info, setInfo] = useState('');
   const [confirmDelete, setConfirmDelete] = useState('');
   const [showDelete, setShowDelete] = useState(false);
+
+  // Analytics: count views of the sign-up screen (from the paywall or the account button).
+  useEffect(() => {
+    if (isOpen && mode === 'signUp' && !user) track('signup_view', { source: notice ? 'paywall' : 'menu' });
+  }, [isOpen, mode, user, notice]);
 
   useEffect(() => {
     if (isOpen) {

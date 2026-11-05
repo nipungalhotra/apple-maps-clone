@@ -12,6 +12,8 @@ import affiliatesRoutes from './routes/affiliates.js';
 import instructorsRoutes from './routes/instructors.js';
 import accountRoutes from './routes/account.js';
 import paymentRoutes, { stripeWebhook, revenueCatWebhook } from './routes/payments.js';
+import { eventsRouter, adminRouter } from './routes/analytics.js';
+import { deleteOldEvents } from './lib/analytics.js';
 import { getDb, query, closeDb } from './db/index.js';
 import { authConfigured } from './lib/auth.js';
 
@@ -61,6 +63,8 @@ app.use('/api/affiliates', affiliatesRoutes);
 app.use('/api/instructors', instructorsRoutes);
 app.use('/api/account', accountRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/events', eventsRouter);
+app.use('/api/admin', adminRouter);
 
 // Unknown API routes return JSON 404 (never the SPA HTML)
 app.use('/api', (req, res) => {
@@ -100,6 +104,11 @@ if (process.env.NODE_ENV !== 'test') {
       const server = app.listen(PORT, HOST, () => {
         console.log(`[RoadReady API] listening on http://${HOST}:${PORT} (${process.env.NODE_ENV || 'development'}, db: ${db.kind})`);
       });
+      // Analytics retention: delete events older than 13 months, now and daily.
+      const cleanup = () => deleteOldEvents().catch((err) => console.error('[analytics] cleanup failed:', err.message));
+      cleanup();
+      const cleanupTimer = setInterval(cleanup, 24 * 60 * 60 * 1000);
+      cleanupTimer.unref();
       const shutdown = () => server.close(() => closeDb().finally(() => process.exit(0)));
       process.on('SIGTERM', shutdown);
       process.on('SIGINT', shutdown);

@@ -1,12 +1,10 @@
 # Payments
 
-RoadReady sells **Learner PRO** as a **Lifetime Pass** (one payment) or a **Monthly Pass** (auto-renewing).
+RoadReady sells **Learner PRO Monthly at $4.99/month, on the website, through Stripe Checkout** (a Stripe-hosted page, so card details never touch our servers). In local development a simulated checkout is used instead; it's turned off in production.
 
-| Where the person buys | How | Why |
-|---|---|---|
-| iPhone / Android app | In-app purchase via **RevenueCat** (App Store / Google Play billing) | Apple and Google require their own billing for digital features |
-| Website | **Stripe Checkout** (Stripe-hosted page) | Card details never touch our servers |
-| Local development | Simulated checkout (no money) | Turned off in production |
+The plan list lives in `PLANS` in `server/lib/entitlements.js`, and the paywall reads it from `/api/payments/config`. To offer another plan, add it there with a Stripe price id.
+
+> **Mobile apps:** the RevenueCat in-app-purchase code is still included but switched off until RevenueCat keys are set. If you publish the iOS/Android apps later, follow the RevenueCat section below. Apple and Google require in-app purchase for digital upgrades inside their apps. Earlier one-time "lifetime" purchases keep working.
 
 Purchases belong to the **account**, so buying is only possible when signed in (see [Accounts and database](ACCOUNTS_AND_DATABASE.md)). Pro is active if **any** source grants it. A web purchase also unlocks Pro in the mobile apps, and the other way round.
 
@@ -24,11 +22,7 @@ Each webhook event is processed only once (`roadready.payment_events`). Access i
 
 ## Setup: Stripe (web)
 
-1. Create the products in Stripe (use **test mode** first):
-   - "Learner PRO Lifetime": a **one-time** price of $29.99
-   - "Learner PRO Monthly": a **recurring monthly** price of $4.99
-
-   Copy both `price_…` ids.
+1. In Stripe (use **test mode** first), create a product "Learner PRO Monthly" with a **recurring monthly** price of **$4.99**. Copy its `price_…` id.
 2. Add a webhook endpoint `https://<your-api>/api/payments/stripe/webhook` with these events:
    - `checkout.session.completed`
    - `checkout.session.async_payment_succeeded`
@@ -40,12 +34,11 @@ Each webhook event is processed only once (`roadready.payment_events`). Access i
 4. Set these on the API (Render):
    - `STRIPE_SECRET_KEY`
    - `STRIPE_WEBHOOK_SECRET`
-   - `STRIPE_PRICE_LIFETIME`
    - `STRIPE_PRICE_MONTHLY`
    - `APP_URL` (your web app, e.g. `https://roadready.app`)
 5. Test with card `4242 4242 4242 4242`. For local webhooks use the Stripe CLI: `stripe listen --forward-to localhost:3001/api/payments/stripe/webhook`.
 
-## Setup: App Store and Google Play (RevenueCat)
+## Setup: App Store and Google Play (RevenueCat), only if you publish the mobile apps
 
 1. **App Store Connect:** sign the Paid Applications agreement and add banking and tax details. Then create the products:
    - a **Non-Consumable** for lifetime, e.g. `roadready_lifetime`
@@ -64,7 +57,7 @@ Each webhook event is processed only once (`roadready.payment_events`). Access i
    - `VITE_TERMS_URL` and `VITE_PRIVACY_URL`
 
    Then run `npm run build && npx cap sync`.
-7. Test with a sandbox Apple ID or a Play license tester. Keep store prices in line with the web prices in `server/lib/entitlements.js`.
+7. Test with a sandbox Apple ID or a Play license tester. Keep store prices in line with the web price in `server/lib/entitlements.js`.
 
 ## Store rules this covers
 
