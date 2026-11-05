@@ -33,7 +33,7 @@ test.describe('RoadReady End-to-End Application Flows', () => {
   });
 
   test('Learner PRO paywall opens and closes cleanly', async ({ page }) => {
-    await page.getByRole('button', { name: 'Unlock Learner PRO Pass for $29.99' }).click();
+    await page.getByRole('button', { name: 'Unlock Learner PRO for $4.99 a month' }).click();
     const heading = page.getByText('Practice smarter for your road test');
     await expect(heading).toBeVisible();
     await page.getByRole('button', { name: 'Close', exact: true }).click();

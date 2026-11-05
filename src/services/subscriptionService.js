@@ -49,7 +49,7 @@ export const saveSubscriptionState = (state) => {
 // NOTE: the server currently runs a SIMULATED checkout (dev only, or when
 // ALLOW_SIMULATED_PAYMENTS=true). Production returns 501 until a real payment
 // provider (Stripe on web, StoreKit / Play Billing on mobile) is integrated.
-export const upgradeToPro = async (tier = 'lifetime') => {
+export const upgradeToPro = async (tier = 'monthly') => {
   const data = await apiFetch('/api/subscription/upgrade', { method: 'POST', body: { tier } });
   const sub = data?.subscription;
   if (!sub?.isPro) {

@@ -1,8 +1,12 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
 import { ErrorBoundary } from 'react-error-boundary';
 import App from './App';
 import './index.css';
+
+// Owner-only business dashboard, loaded only when visiting /admin.
+const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
+const isAdminPage = typeof window !== 'undefined' && /^\/admin\/?$/.test(window.location.pathname);
 
 function RootErrorFallback({ error, resetErrorBoundary }) {
   return (
@@ -52,7 +56,13 @@ if (typeof window !== 'undefined' && 'serviceWorker' in navigator && process.env
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary FallbackComponent={RootErrorFallback}>
-      <App />
+      {isAdminPage ? (
+        <Suspense fallback={null}>
+          <AdminDashboard />
+        </Suspense>
+      ) : (
+        <App />
+      )}
     </ErrorBoundary>
   </React.StrictMode>
 );

@@ -20,6 +20,7 @@ import { generateLearnerZonesForLocation } from './services/learnerEngine';
 import { getSubscriptionState, refreshSubscriptionState, clearSubscriptionCache } from './services/subscriptionService';
 import { accountsEnabled, getCurrentUser, onAuthChange } from './services/authService';
 import { handleCheckoutReturn, syncPurchasesUser } from './services/paymentsService';
+import { trackAppOpen } from './services/analytics';
 import { apiFetch, resetClientId } from './services/apiConfig';
 
 export default function App() {
@@ -151,6 +152,7 @@ export default function App() {
         setAuthUser(user);
         syncPurchasesUser(user?.id || null);
       })
+      .then(() => { if (!cancelled) trackAppOpen(); })
       .catch(() => {})
       .finally(() => {
         if (cancelled) return;

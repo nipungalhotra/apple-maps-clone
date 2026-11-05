@@ -36,7 +36,7 @@ router.post('/upgrade', writeLimiter, async (req, res) => {
   try {
     const tier = req.body?.tier;
     if (!isPlan(tier)) {
-      return res.status(400).json({ error: 'tier must be "lifetime" or "monthly"' });
+      return res.status(400).json({ error: `tier must be one of: ${Object.keys(PLANS).join(', ')}` });
     }
     const now = new Date();
     await upsertEntitlement({

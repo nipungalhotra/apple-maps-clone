@@ -67,7 +67,7 @@ RoadReady's target market dynamics, multi-sided stakeholder incentives, and pric
 - **Dual-Feed Multi-Agent Swarm:** 72 simulated rounds yielding 86 organic social events across student drivers, supervising parents, certified driving schools, and DMV agencies.
 - **Ecosystem Equilibrium:** Professional driving instructors embrace RoadReady's 1-on-1 Coach Marketplace as a qualified student acquisition channel ($65–$85/hr dual-control lessons) rather than seeing the app as competition.
 - **Compliance Automation:** Parents rapidly adopt the digital 50-hour practice logbook to satisfy State Form DL-50HRS GDL requirements, eliminating supervisory anxiety and logbook falsification.
-- **Pricing Viability:** Strong willingness-to-pay identified for the **$29.99 Pro Pass** (unlimited 3D cone courses and certified PDF export) and sustainable marketplace take rates ($25–$35/booking).
+- **Pricing Viability:** The simulation indicated willingness to pay for a Pro tier (unlimited cone courses and a printable practice-log worksheet); RoadReady now sells it at **$4.99/month** and sustainable marketplace take rates ($25–$35/booking).
 
 👉 **[Read the Full MiroFish Market Prediction Report & Analysis](docs/mirofish-simulation/MARKET_PREDICTION_REPORT.md)**
 
@@ -81,7 +81,8 @@ RoadReady's target market dynamics, multi-sided stakeholder incentives, and pric
 - **Voice Synthesis:** Web Speech API (`speechSynthesis`)
 - **Backend API:** Node.js, Express 5, Postgres (`pg`; embedded PGlite for local dev and tests)
 - **Accounts:** Supabase Auth (email + password), verified server-side with `jose`
-- **Payments:** Stripe Checkout (web) and RevenueCat (App Store / Google Play in-app purchases)
+- **Payments:** Stripe Checkout, $4.99/month (RevenueCat in-app purchases ready for the mobile apps)
+- **Analytics:** first-party events in Postgres plus an owner dashboard at `/admin` (no third-party trackers)
 - **Native Mobile:** Capacitor 8 (Android & iOS native projects)
 
 ---
@@ -126,7 +127,8 @@ npm run build    # Compiles production assets into /dist
 
 Local development needs no database setup: the API uses an embedded Postgres stored in `server/storage/pglite`.
 Accounts are off until you add Supabase settings; see **[Accounts and database](docs/ACCOUNTS_AND_DATABASE.md)**.
-Payments (Stripe on the web, App Store / Google Play via RevenueCat) are set up in **[Payments](docs/PAYMENTS.md)**; without them, development uses a simulated checkout.
+Learner PRO is sold on the website at **$4.99/month** through Stripe; see **[Payments](docs/PAYMENTS.md)** (without Stripe keys, development uses a simulated checkout).
+The owner dashboard at **`/admin`** answers "is it making money?"; see **[Analytics](docs/ANALYTICS.md)**.
 
 ---
 

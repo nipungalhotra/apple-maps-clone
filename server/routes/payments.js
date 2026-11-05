@@ -38,7 +38,7 @@ router.get('/config', (req, res) => {
 router.post('/stripe/checkout', writeLimiter, identify, requireUser, async (req, res) => {
   if (!stripeConfigured) return res.status(501).json({ error: 'Web payments are not configured' });
   const plan = req.body?.plan;
-  if (!isPlan(plan)) return res.status(400).json({ error: 'plan must be "lifetime" or "monthly"' });
+  if (!isPlan(plan)) return res.status(400).json({ error: `plan must be one of: ${Object.keys(PLANS).join(', ')}` });
   const appUrl = appUrlFor(req);
   if (!appUrl) return res.status(500).json({ error: 'APP_URL is not configured' });
 

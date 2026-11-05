@@ -207,7 +207,7 @@ describe('RoadReady Express API Endpoints', () => {
       const { token, sub } = await makeToken();
       const auth = { Authorization: `Bearer ${token}` };
       await request(app).post('/api/passport/log').set(auth).send({ hours: 1 });
-      await request(app).post('/api/subscription/upgrade').set(auth).send({ tier: 'lifetime' });
+      await request(app).post('/api/subscription/upgrade').set(auth).send({ tier: 'monthly' });
       await request(app).post('/api/community-reports').set(auth).send({ zoneId: 'delete-zone', notes: 'mine' });
 
       const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 200 }));

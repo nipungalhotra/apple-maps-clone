@@ -8,6 +8,7 @@ import {
   purchasePlan, restorePurchases, manageSubscription, getPaymentsConfig, getStorePrices,
   isNativeApp, TERMS_URL, PRIVACY_URL
 } from '../services/paymentsService';
+import { track } from '../services/analytics';
 
 export default function LearnerProPaywallModal({
   isOpen,
@@ -18,7 +19,8 @@ export default function LearnerProPaywallModal({
   onRequireSignIn = () => {},
   subscription = null
 }) {
-  const [selectedPlan, setSelectedPlan] = useState('lifetime'); // 'lifetime' | 'monthly'
+  // One plan is on sale: Learner PRO Monthly ($4.99/month on the website).
+  const selectedPlan = 'monthly';
   const [isProcessing, setIsProcessing] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [successToast, setSuccessToast] = useState(false);
@@ -31,15 +33,16 @@ export default function LearnerProPaywallModal({
     if (!isOpen) return;
     setUpgradeError('');
     setInfoMessage('');
+    if (!isPro) track('paywall_view', highlightFeature ? { feature: String(highlightFeature) } : {});
     getPaymentsConfig().then(setConfig).catch(() => {});
     getStorePrices().then(setStorePrices).catch(() => {});
   }, [isOpen]);
 
   if (!isOpen) return null;
 
-  // On iOS / Android the price shown must be the store's (localised) price.
-  const lifetimePrice = storePrices?.lifetime || '$29.99';
-  const monthlyPrice = storePrices?.monthly || '$4.99';
+  // Price comes from the server's plan list; on iOS / Android it must be the store's (localised) price.
+  const serverPlan = config?.plans?.find((p) => p.id === 'monthly');
+  const monthlyPrice = storePrices?.monthly || `$${(serverPlan?.price ?? 4.99).toFixed(2)}`;
   const showDevSwitch = Boolean(config?.simulated) && !config?.web?.stripe && !isNativeApp;
   const paidBy = isNativeApp
     ? (/android/i.test(navigator.userAgent) ? 'Google Play' : 'the App Store')
@@ -174,56 +177,16 @@ export default function LearnerProPaywallModal({
 
         {/* Plan Selector */}
         <div className="p-5 sm:p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            {/* Lifetime Option */}
-            <div
-              onClick={() => setSelectedPlan('lifetime')}
-              className={`relative p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${
-                selectedPlan === 'lifetime'
-                  ? 'border-amber-500 bg-amber-500/10 dark:bg-amber-500/15 shadow-md'
-                  : 'border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 opacity-80 hover:opacity-100'
-              }`}
-            >
-              <div className="absolute -top-2.5 right-3 px-2 py-0.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-full text-[9px] font-black uppercase tracking-wider shadow-sm">
-                Best Value
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-black text-zinc-900 dark:text-zinc-100">Lifetime Pass</span>
-                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${selectedPlan === 'lifetime' ? 'border-amber-500 bg-amber-500' : 'border-zinc-400'}`}>
-                  {selectedPlan === 'lifetime' && <Check className="w-2.5 h-2.5 text-white" />}
-                </div>
-              </div>
-              <div className="mt-2">
-                <span className="text-2xl font-black text-zinc-900 dark:text-zinc-100">{lifetimePrice}</span>
-                <span className="text-[11px] text-zinc-400 ml-1 font-medium">one-time</span>
-              </div>
-              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1">
-                Pay once. Yours to keep.
+          <div className="p-3.5 rounded-2xl border-2 border-amber-500 bg-amber-500/10 dark:bg-amber-500/15 shadow-md flex items-center justify-between gap-3">
+            <div>
+              <span className="text-xs font-black text-zinc-900 dark:text-zinc-100">Learner PRO Monthly</span>
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                Everything below. Renews monthly, cancel anytime.
               </p>
             </div>
-
-            {/* Monthly Option */}
-            <div
-              onClick={() => setSelectedPlan('monthly')}
-              className={`relative p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${
-                selectedPlan === 'monthly'
-                  ? 'border-amber-500 bg-amber-500/10 dark:bg-amber-500/15 shadow-md'
-                  : 'border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 opacity-80 hover:opacity-100'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-black text-zinc-900 dark:text-zinc-100">Monthly Pass</span>
-                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${selectedPlan === 'monthly' ? 'border-amber-500 bg-amber-500' : 'border-zinc-400'}`}>
-                  {selectedPlan === 'monthly' && <Check className="w-2.5 h-2.5 text-white" />}
-                </div>
-              </div>
-              <div className="mt-2">
-                <span className="text-2xl font-black text-zinc-900 dark:text-zinc-100">{monthlyPrice}</span>
-                <span className="text-[11px] text-zinc-400 ml-1 font-medium">/ month</span>
-              </div>
-              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1">
-                Renews monthly. Cancel anytime.
-              </p>
+            <div className="text-right shrink-0">
+              <span className="text-2xl font-black text-zinc-900 dark:text-zinc-100">{monthlyPrice}</span>
+              <span className="text-[11px] text-zinc-400 ml-1 font-medium">/ month</span>
             </div>
           </div>
 
@@ -295,7 +258,7 @@ export default function LearnerProPaywallModal({
                   <>
                     <Zap className="w-4 h-4 fill-white" />
                     <span>
-                      {selectedPlan === 'lifetime' ? `Get Lifetime Pass · ${lifetimePrice}` : `Subscribe · ${monthlyPrice}/month`}
+                      {`Subscribe · ${monthlyPrice}/month`}
                     </span>
                   </>
                 )}
@@ -316,9 +279,7 @@ export default function LearnerProPaywallModal({
             {/* Required purchase disclosures (App Store 3.1.2 / Google Play subscriptions policy) */}
             {!isPro && (
               <p className="text-[10px] leading-snug text-zinc-500 dark:text-zinc-400 text-center">
-                {selectedPlan === 'monthly'
-                  ? `Monthly Pass: ${monthlyPrice} charged each month through ${paidBy}. It renews automatically until you cancel, at least 24 hours before the renewal date. Cancel any time in your ${isNativeApp ? 'store account settings' : 'account'}.`
-                  : `Lifetime Pass: one payment of ${lifetimePrice} through ${paidBy}. No subscription.`}
+                {`Learner PRO Monthly: ${monthlyPrice} charged each month through ${paidBy}. It renews automatically until you cancel, at least 24 hours before the renewal date. Cancel any time in your ${isNativeApp ? 'store account settings' : 'account'}.`}
               </p>
             )}
           </div>
@@ -352,7 +313,7 @@ export default function LearnerProPaywallModal({
                   Reset simulated plan
                 </button>
               ) : (
-                <button onClick={() => handleUpgrade('lifetime')} className="font-bold text-emerald-600 hover:underline">
+                <button onClick={() => handleUpgrade('monthly')} className="font-bold text-emerald-600 hover:underline">
                   Simulate purchase
                 </button>
               )}

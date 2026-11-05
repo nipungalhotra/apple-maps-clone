@@ -69,10 +69,10 @@ export default function DeviceModeBar({
             onClick={() => onOpenPaywall()}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black bg-gradient-to-r from-amber-500 via-orange-500 to-rose-600 hover:opacity-95 text-white shadow-md active:scale-95 transition-all"
             title="Unlock Unlimited Grounds, DMV Test Simulator & Printable Practice Log"
-            aria-label="Unlock Learner PRO Pass for $29.99"
+            aria-label="Unlock Learner PRO for $4.99 a month"
           >
             <Zap className="w-3.5 h-3.5 fill-white" />
-            <span>PRO $29.99</span>
+            <span>PRO $4.99/mo</span>
           </button>
         )}
 

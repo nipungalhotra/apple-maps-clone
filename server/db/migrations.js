@@ -128,5 +128,34 @@ export const MIGRATIONS = [
       ALTER TABLE roadready.entitlements ENABLE ROW LEVEL SECURITY;
       ALTER TABLE roadready.payment_events ENABLE ROW LEVEL SECURITY;
     `
+  },
+  {
+    version: 3,
+    name: 'first-party product analytics events',
+    // Privacy by design: no IP address, no user agent string, no email. visitor_id is a
+    // one-way hash of the device id (so analytics rows cannot be used to read guest data),
+    // and rows older than 13 months are deleted automatically.
+    sql: `
+      CREATE TABLE roadready.analytics_events (
+        id uuid PRIMARY KEY,
+        name text NOT NULL,
+        visitor_id text NOT NULL,
+        user_id uuid,
+        session_id text,
+        path text,
+        referrer_host text,
+        utm_source text,
+        utm_medium text,
+        utm_campaign text,
+        device text,
+        props jsonb NOT NULL DEFAULT '{}'::jsonb,
+        created_at timestamptz NOT NULL DEFAULT now()
+      );
+      CREATE INDEX analytics_events_name_time_idx ON roadready.analytics_events (name, created_at);
+      CREATE INDEX analytics_events_time_idx ON roadready.analytics_events (created_at);
+      CREATE INDEX analytics_events_user_idx ON roadready.analytics_events (user_id);
+
+      ALTER TABLE roadready.analytics_events ENABLE ROW LEVEL SECURITY;
+    `
   }
 ];

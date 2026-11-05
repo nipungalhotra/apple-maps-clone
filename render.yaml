@@ -36,12 +36,13 @@ services:
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
-      - key: STRIPE_PRICE_LIFETIME
-        sync: false
       - key: STRIPE_PRICE_MONTHLY
         sync: false
       - key: APP_URL
         sync: false
+      # Monthly running costs for the /admin profit dashboard
+      - key: MONTHLY_COSTS_USD
+        value: 75
       # App Store / Google Play purchases (RevenueCat)
       - key: REVENUECAT_SECRET_KEY
         sync: false

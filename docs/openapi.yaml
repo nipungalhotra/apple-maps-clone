@@ -145,7 +145,7 @@ paths:
               properties:
                 tier:
                   type: string
-                  enum: [lifetime, monthly]
+                  enum: [monthly]
       responses:
         '200':
           description: Subscription upgraded (simulated checkout; the price is set by the server).
@@ -174,7 +174,7 @@ paths:
             schema:
               type: object
               properties:
-                plan: { type: string, enum: [lifetime, monthly] }
+                plan: { type: string, enum: [monthly] }
       responses:
         '200': { description: 'Checkout URL to open: { url }' }
         '401': { description: Sign-in required. }
@@ -222,6 +222,29 @@ paths:
       responses:
         '200': { description: Processed (or a duplicate). }
         '401': { description: Wrong or missing Authorization header. }
+
+  /api/events:
+    post:
+      summary: Record an analytics event (first-party)
+      description: Accepted names are app_open, paywall_view, checkout_start and signup_view; unknown events and fields are dropped. Needs X-Client-Id (stored only as a hash).
+      security:
+        - clientId: []
+      responses:
+        '204': { description: Recorded or ignored. }
+
+  /api/admin/metrics:
+    get:
+      summary: Business metrics (owner only)
+      description: Funnel, subscribers, churn, revenue after fees, profit, break-even, sources and daily trend.
+      security:
+        - adminToken: []
+      parameters:
+        - { name: days, in: query, schema: { type: integer, minimum: 1, maximum: 365, default: 30 } }
+        - { name: includeSimulated, in: query, schema: { type: boolean } }
+        - { name: costs, in: query, description: Monthly running costs in USD, schema: { type: number, minimum: 0 } }
+      responses:
+        '200': { description: Metrics. }
+        '401': { description: Missing or wrong admin token. }
 
   /api/account:
     get:
@@ -273,6 +296,10 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: Supabase Auth access token.
+    adminToken:
+      type: http
+      scheme: bearer
+      description: The ADMIN_TOKEN configured on the server.
     clientId:
       type: apiKey
       in: header
