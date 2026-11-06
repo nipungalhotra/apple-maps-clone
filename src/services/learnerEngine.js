@@ -247,6 +247,15 @@ export function getDrillsForVehicle(vehicleType) {
   return SKILL_DRILLS.filter(d => d.vehicle === 'Both' || d.vehicle.toLowerCase() === vehicleType.toLowerCase());
 }
 
+/** Exact distance in metres (no rounding), for short distances such as "40 m away". */
+export function distanceMeters([lng1, lat1], [lng2, lat2]) {
+  const R = 6371000;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 export function calculateDistanceKm(coord1, coord2) {
   const [lng1, lat1] = coord1;
   const [lng2, lat2] = coord2;

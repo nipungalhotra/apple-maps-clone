@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { isDefaultLocation } from '../services/learnerEngine';
+import { formatAccuracy } from '../services/preciseLocation';
 import {
   Search, X, Navigation as NavIcon, Car, Footprints, Bike,
   Share2, Heart, Phone, Globe, Clock, Star, Compass, Utensils,
@@ -14,6 +15,7 @@ export default function DesktopSidebar({
   searchQuery,
   setSearchQuery,
   searchResults,
+  searchStatus = 'idle',
   selectedPlace,
   setSelectedPlace,
   routeData,
@@ -26,10 +28,12 @@ export default function DesktopSidebar({
   favorites,
   onToggleFavorite,
   userLocation,
+  locationAccuracy = null,
   onSelectCurrentLocation,
   selectedLearnerZone,
   setSelectedLearnerZone,
   learnerZones = [],
+  mySpots = null,
   activeMainTab,
   setActiveMainTab,
   // Virtual Cones props
@@ -161,6 +165,7 @@ export default function DesktopSidebar({
             userLocation={userLocation}
             selectedLearnerZone={selectedLearnerZone}
             learnerZones={learnerZones}
+            mySpots={mySpots}
             onSelectZone={(zone) => setSelectedLearnerZone(zone)}
             onNavigateToZone={handleNavigateToLearnerZone}
             activeCoursePreset={activeCoursePreset}
@@ -223,6 +228,13 @@ export default function DesktopSidebar({
                 ))}
               </div>
 
+              {routeData.isPracticeLoop && (
+                <p role="note" className="text-[11px] leading-snug text-amber-800 dark:text-amber-200 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2">
+                  {routeData.label ? <strong className="block mb-0.5">{routeData.label}</strong> : null}
+                  A suggested circuit on nearby roads, not checked for traffic or safety. Look at it with your supervisor
+                  first, skip busy roads, and only drive where you&rsquo;re comfortable.
+                </p>
+              )}
               {/* Time & Distance Summary */}
               <div className="flex items-center justify-between pt-1">
                 <div>
@@ -230,7 +242,7 @@ export default function DesktopSidebar({
                     {formatDuration(routeData.durationSeconds)}
                   </div>
                   <div className="text-xs text-zinc-500 font-medium">
-                    {formatDistance(routeData.distanceMeters)} • Fastest Route
+                    {formatDistance(routeData.distanceMeters)} • {routeData.isPracticeLoop ? 'Practice loop' : 'Fastest route'}
                   </div>
                 </div>
 
@@ -378,7 +390,7 @@ export default function DesktopSidebar({
                   <p className="text-xs text-zinc-500 dark:text-zinc-400">
                     {isDefaultLocation(userLocation)
                       ? 'Showing central San Francisco until you share it'
-                      : `GPS • ${userLocation[1].toFixed(3)}°, ${userLocation[0].toFixed(3)}°`}
+                      : `GPS • ${userLocation[1].toFixed(4)}°, ${userLocation[0].toFixed(4)}°${locationAccuracy ? ` • ${formatAccuracy(locationAccuracy)}` : ''}`}
                   </p>
                 </div>
               </div>
@@ -387,7 +399,17 @@ export default function DesktopSidebar({
               </span>
             </div>
 
-            {searchResults.map((place) => (
+            {searchStatus === 'loading' && (
+              <p role="status" className="px-2 py-1.5 text-xs text-zinc-500 dark:text-zinc-400">Searching&hellip;</p>
+            )}
+            {searchStatus === 'error' && (
+              <p role="alert" className="px-2 py-1.5 text-xs text-red-600 dark:text-red-400">Search isn&rsquo;t available right now. Check your connection and try again.</p>
+            )}
+            {searchStatus === 'done' && searchResults.length === 0 && (
+              <p role="status" className="px-2 py-1.5 text-xs text-zinc-500 dark:text-zinc-400">No places found for &ldquo;{searchQuery}&rdquo;.</p>
+            )}
+
+            {searchStatus !== 'loading' && searchResults.map((place) => (
               <div
                 key={place.id}
                 onClick={() => setSelectedPlace(place)}

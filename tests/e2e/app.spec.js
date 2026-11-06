@@ -69,4 +69,16 @@ test.describe('RoadReady End-to-End Application Flows', () => {
     const cta = page.getByRole('link', { name: 'Open RoadReady' }).first();
     await expect(cta).toHaveAttribute('href', /utm_source=guide/);
   });
+
+  test('Learners anywhere can save their own practice spot and place cones there', async ({ page }) => {
+    await page.getByRole('button', { name: 'Tap on map' }).click();
+    await expect(page.getByText('Tap the map where you want to practise.')).toBeVisible();
+    await page.locator('.maplibregl-canvas').click({ position: { x: 600, y: 300 } });
+    await page.getByLabel('Name this spot').fill('Test ground');
+    await page.getByRole('button', { name: 'Save spot' }).click();
+    await expect(page.getByText('Test ground')).toBeVisible();
+    await page.getByRole('button', { name: '▲ Cones' }).click();
+    await page.getByText('Slalom Weave Track').click();
+    await expect(page.getByText(/Placed at Test ground \(5 cones\)/)).toBeVisible();
+  });
 });

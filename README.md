@@ -36,6 +36,7 @@
 
 ### 🔰 Safe Practice Grounds & Navigation
 - **Practice Spots:** Hand-picked empty lots and quiet roads (San Francisco area for now), each with a beginner rating that is our estimate, not a safety guarantee.
+- **My Practice Spots (anywhere):** Save your own practice ground from your location or by tapping the map, place cone drills there, and get a suggested practice loop on nearby roads. Distances are shown in km or miles to match your region. Location uses the phone's GPS and waits a few seconds for a precise fix (shown as ±metres with an accuracy circle), warning when it's only approximate.
 - **Virtual Traffic Cone Courses:** Drop parallel parking bays, reverse 90° docking, and slalom drills onto open pavement with zero risk to vehicles.
 - **Estimated Traffic Overlay:** A simulated busy/quiet guide (not live traffic data).
 - **Weather Practice Modes:** Switch between dry, wet and night to see how stopping distances change.

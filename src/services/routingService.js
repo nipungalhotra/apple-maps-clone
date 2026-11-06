@@ -1,46 +1,107 @@
 import { API_ENDPOINTS } from '../config/mapConfig';
 
 /**
- * RoadReady Routing Service
- * Connects to Open Source Routing Machine (OSRM) public API with simulated route fallback
+ * RoadReady routing, via the Open Source Routing Machine (OSRM) API.
+ *
+ * There is deliberately NO offline "simulated" route: drawing invented turns in a driving
+ * app is dangerous. If the routing service can't be reached, these functions throw a
+ * RouteUnavailableError and the app tells the person instead.
  */
 
-export async function calculateRoute(startCoord, endCoord, mode = 'driving') {
-  // mode: 'driving' | 'walking' | 'cycling'
-  const osrmProfile = mode === 'walking' ? 'foot' : mode === 'cycling' ? 'bike' : 'car';
-  const url = `${API_ENDPOINTS.osrmRouting}/${osrmProfile}/${startCoord[0]},${startCoord[1]};${endCoord[0]},${endCoord[1]}?overview=full&geometries=geojson&steps=true`;
+export class RouteUnavailableError extends Error {
+  constructor(message = 'Directions are not available right now. Check your connection and try again.') {
+    super(message);
+    this.name = 'RouteUnavailableError';
+  }
+}
 
+const PROFILE = { walking: 'foot', cycling: 'bike', driving: 'car' };
+
+async function requestRoute(points, mode, { timeoutMs = 10000 } = {}) {
+  const path = points.map(([lng, lat]) => `${lng.toFixed(6)},${lat.toFixed(6)}`).join(';');
+  const url = `${API_ENDPOINTS.osrmRouting}/${PROFILE[mode] || 'car'}/${path}?overview=full&geometries=geojson&steps=true`;
+
+  let data;
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
-    if (!res.ok) throw new Error('OSRM API returned non-200');
-    const data = await res.json();
-    if (data.routes && data.routes.length > 0) {
-      const primary = data.routes[0];
-      const steps = primary.legs[0].steps.map((st, i) => ({
-        id: `step-${i}`,
-        instruction: st.maneuver.instruction || formatManeuver(st.maneuver.type, st.maneuver.modifier, st.name),
-        maneuverType: st.maneuver.type,
-        modifier: st.maneuver.modifier,
-        distance: st.distance, // meters
-        duration: st.duration, // seconds
-        name: st.name || 'Unnamed Road',
-        location: st.maneuver.location
-      }));
-
-      return {
-        coordinates: primary.geometry.coordinates,
-        distanceMeters: primary.distance,
-        durationSeconds: primary.duration,
-        steps,
-        mode
-      };
-    }
+    const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+    if (!res.ok) throw new Error(`routing service returned ${res.status}`);
+    data = await res.json();
   } catch (err) {
-    console.warn('Real-time OSRM route fetch failed, using fallback interpolated path:', err.message);
+    console.warn('Routing request failed:', err.message);
+    throw new RouteUnavailableError();
+  }
+  const primary = data?.routes?.[0];
+  if (data?.code !== 'Ok' || !primary) {
+    throw new RouteUnavailableError('No drivable route was found between these points.');
   }
 
-  // Realistic Fallback Route Synthesizer (e.g. offline / network sandbox)
-  return generateSimulatedRoute(startCoord, endCoord, mode);
+  // Multi-stop routes (practice loops) contain an "arrive" + "depart" pair at every stop.
+  // Drop those in-between steps, adding their distance and time to the previous step.
+  const lastLeg = primary.legs.length - 1;
+  const rawSteps = [];
+  primary.legs.forEach((leg, li) => {
+    leg.steps.forEach((st) => {
+      const inBetween = (st.maneuver.type === 'arrive' && li < lastLeg) || (st.maneuver.type === 'depart' && li > 0);
+      if (inBetween && rawSteps.length > 0) {
+        const prev = rawSteps[rawSteps.length - 1];
+        prev.distance += st.distance;
+        prev.duration += st.duration;
+      } else {
+        rawSteps.push({ ...st });
+      }
+    });
+  });
+
+  const steps = rawSteps.map((st, i) => ({
+    id: `step-${i}`,
+    instruction: st.maneuver.instruction || formatManeuver(st.maneuver.type, st.maneuver.modifier, st.name),
+    maneuverType: st.maneuver.type,
+    modifier: st.maneuver.modifier,
+    distance: st.distance, // meters
+    duration: st.duration, // seconds
+    name: st.name || '',
+    location: st.maneuver.location
+  }));
+
+  return {
+    coordinates: primary.geometry.coordinates,
+    distanceMeters: primary.distance,
+    durationSeconds: primary.duration,
+    steps,
+    mode
+  };
+}
+
+export async function calculateRoute(startCoord, endCoord, mode = 'driving') {
+  return requestRoute([startCoord, endCoord], mode);
+}
+
+/** Point `meters` away from `[lng, lat]` in direction `bearingDeg` (0 = north). */
+export function offsetPoint([lng, lat], meters, bearingDeg) {
+  const R = 6371000;
+  const b = (bearingDeg * Math.PI) / 180;
+  const lat1 = (lat * Math.PI) / 180;
+  const lng1 = (lng * Math.PI) / 180;
+  const d = meters / R;
+  const lat2 = Math.asin(Math.sin(lat1) * Math.cos(d) + Math.cos(lat1) * Math.sin(d) * Math.cos(b));
+  const lng2 = lng1 + Math.atan2(Math.sin(b) * Math.sin(d) * Math.cos(lat1), Math.cos(d) - Math.sin(lat1) * Math.sin(lat2));
+  return [(lng2 * 180) / Math.PI, (lat2 * 180) / Math.PI];
+}
+
+/**
+ * A short practice circuit on real roads that starts and ends at `center`:
+ * the routing service joins three points spaced around it. It is a suggestion only;
+ * it is NOT checked for traffic or safety, and the app says so.
+ */
+export async function calculatePracticeLoop(center, { radiusMeters = 500, mode = 'driving', rotationDeg = 0 } = {}) {
+  const waypoints = [0, 120, 240].map((b) => offsetPoint(center, radiusMeters, b + rotationDeg));
+  const route = await requestRoute([center, ...waypoints, center], mode, { timeoutMs: 12000 });
+  const steps = route.steps.map((s, i, all) => {
+    if (i === 0 && s.maneuverType === 'depart') return { ...s, instruction: 'Start the practice loop' };
+    if (i === all.length - 1 && s.maneuverType === 'arrive') return { ...s, instruction: 'You\u2019re back at the start' };
+    return s;
+  });
+  return { ...route, steps, isPracticeLoop: true, loopRadiusMeters: radiusMeters };
 }
 
 function formatManeuver(type, modifier, streetName) {
@@ -56,52 +117,28 @@ function formatManeuver(type, modifier, streetName) {
   return `Continue on ${streetName || 'the road'}`;
 }
 
-function generateSimulatedRoute(start, end, mode) {
-  const [lng1, lat1] = start;
-  const [lng2, lat2] = end;
-  const numWaypoints = 24;
-  const coordinates = [];
+// Countries that use miles on the road (US, UK, Liberia, Myanmar). Everyone else gets km.
+const IMPERIAL_REGIONS = new Set(['US', 'GB', 'LR', 'MM']);
 
-  // Generate a slightly curved realistic path
-  for (let i = 0; i <= numWaypoints; i++) {
-    const t = i / numWaypoints;
-    const curve = Math.sin(t * Math.PI) * 0.004;
-    const lng = lng1 + (lng2 - lng1) * t + curve;
-    const lat = lat1 + (lat2 - lat1) * t + (i % 2 === 0 ? curve * 0.5 : -curve * 0.5);
-    coordinates.push([lng, lat]);
+export function usesImperialUnits(locales) {
+  const list = locales || (typeof navigator !== 'undefined' ? (navigator.languages?.length ? navigator.languages : [navigator.language]) : []);
+  const first = (list || []).find(Boolean) || 'en-US';
+  try {
+    const region = new Intl.Locale(first).maximize().region;
+    return IMPERIAL_REGIONS.has(region);
+  } catch {
+    return /-(US|GB|LR|MM)\b/i.test(first);
   }
-
-  // Calculate approximate distance
-  const dLat = (lat2 - lat1) * 111000;
-  const dLng = (lng2 - lng1) * 111000 * Math.cos((lat1 * Math.PI) / 180);
-  const totalDist = Math.sqrt(dLat * dLat + dLng * dLng) * 1.25;
-
-  const speedKmh = mode === 'walking' ? 4.5 : mode === 'cycling' ? 18 : 45;
-  const durationSec = (totalDist / (speedKmh * 1000)) * 3600;
-
-  const steps = [
-    { id: 'step-0', instruction: 'Start route heading north', maneuverType: 'depart', distance: totalDist * 0.15, duration: durationSec * 0.15, name: 'Main St' },
-    { id: 'step-1', instruction: 'In 500 ft, turn right onto Avenue Boulevard', maneuverType: 'turn', modifier: 'right', distance: totalDist * 0.45, duration: durationSec * 0.45, name: 'Avenue Blvd' },
-    { id: 'step-2', instruction: 'Continue straight for 1.2 miles', maneuverType: 'continue', modifier: 'straight', distance: totalDist * 0.3, duration: durationSec * 0.3, name: 'Grand Way' },
-    { id: 'step-3', instruction: 'You have arrived at your destination on the right', maneuverType: 'arrive', distance: totalDist * 0.1, duration: durationSec * 0.1, name: 'Destination' }
-  ];
-
-  return {
-    coordinates,
-    distanceMeters: totalDist,
-    durationSeconds: durationSec,
-    steps,
-    mode
-  };
 }
 
-export function formatDistance(meters) {
-  if (meters < 1000) {
-    const feet = Math.round(meters * 3.28084);
-    return `${feet} ft`;
+export function formatDistance(meters, { imperial = usesImperialUnits() } = {}) {
+  const m = Math.max(0, Number(meters) || 0);
+  if (imperial) {
+    if (m < 160) return `${Math.round((m * 3.28084) / 10) * 10} ft`;
+    return `${(m / 1609.34).toFixed(1)} mi`;
   }
-  const miles = (meters / 1609.34).toFixed(1);
-  return `${miles} mi`;
+  if (m < 1000) return `${Math.max(10, Math.round(m / 10) * 10)} m`;
+  return `${(m / 1000).toFixed(1)} km`;
 }
 
 export function formatDuration(seconds) {

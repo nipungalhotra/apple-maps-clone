@@ -6,6 +6,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { LEARNER_ZONES } from '../data/learnerZones';
 import { apiFetch } from '../services/apiConfig';
+import { accuracyCircle } from '../services/preciseLocation';
 import { MAP_STYLES, FALLBACK_STYLES } from '../config/mapConfig';
 
 maplibregl.setWorkerUrl(maplibreWorkerUrl);
@@ -54,6 +55,9 @@ export default function AppleMap({
   cones = [],
   onDropCone = null,
   isDroppingCustomCone = false,
+  locationAccuracy = null,
+  isPickingSpot = false,
+  onPickSpot = null,
   activeDmvRoute = null,
   recenterTrigger = 0,
   showTraffic = false
@@ -67,6 +71,11 @@ export default function AppleMap({
   const trafficIncidentMarkersRef = useRef([]);
   const learnerZonesRef = useRef(learnerZones);
   const isDroppingCustomConeRef = useRef(isDroppingCustomCone);
+  const userLocationRef = useRef(userLocation);
+  const accuracyRef = useRef(locationAccuracy);
+  const isPickingSpotRef = useRef(isPickingSpot);
+  const onPickSpotRef = useRef(onPickSpot);
+  useEffect(() => { isPickingSpotRef.current = isPickingSpot; onPickSpotRef.current = onPickSpot; }, [isPickingSpot, onPickSpot]);
   const onDropConeRef = useRef(onDropCone);
   const onMapClickRef = useRef(onMapClick);
   const onSelectLearnerZoneRef = useRef(onSelectLearnerZone);
@@ -194,6 +203,14 @@ export default function AppleMap({
         paint: { 'line-color': '#30B0C7', 'line-width': 5, 'line-opacity': 0.8 }
       });
 
+      // GPS accuracy circle around the user's position (how exact the fix is)
+      map.addSource('user-accuracy', {
+        type: 'geojson',
+        data: accuracyCircle(userLocationRef.current, accuracyRef.current)
+      });
+      map.addLayer({ id: 'user-accuracy-fill', type: 'fill', source: 'user-accuracy', paint: { 'fill-color': '#007AFF', 'fill-opacity': 0.12 } });
+      map.addLayer({ id: 'user-accuracy-line', type: 'line', source: 'user-accuracy', paint: { 'line-color': '#007AFF', 'line-opacity': 0.45, 'line-width': 1.5 } });
+
       // 3. Navigation Route Source
       map.addSource('route', {
         type: 'geojson',
@@ -284,6 +301,10 @@ export default function AppleMap({
     });
 
     map.on('click', (e) => {
+      if (isPickingSpotRef.current && onPickSpotRef.current) {
+        onPickSpotRef.current(e.lngLat.lng, e.lngLat.lat);
+        return;
+      }
       if (isDroppingCustomConeRef.current && onDropConeRef.current) {
         onDropConeRef.current(e.lngLat.lng, e.lngLat.lat);
         return;
@@ -615,6 +636,14 @@ export default function AppleMap({
       }
     }
   }, [routeData]);
+
+  // GPS accuracy circle
+  useEffect(() => {
+    userLocationRef.current = userLocation;
+    accuracyRef.current = locationAccuracy;
+    const source = mapRef.current?.getSource('user-accuracy');
+    if (source) source.setData(accuracyCircle(userLocation, locationAccuracy));
+  }, [userLocation, locationAccuracy]);
 
   // User puck
   useEffect(() => {
