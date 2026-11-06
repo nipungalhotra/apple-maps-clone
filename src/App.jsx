@@ -15,9 +15,11 @@ import { LEARNER_ZONES } from './data/learnerZones';
 import { CONE_PRESETS } from './data/conePresets';
 import { DMV_TEST_ROUTES } from './data/dmvTestRoutes';
 import { searchLocations } from './services/searchService';
-import { calculateRoute } from './services/routingService';
+import { calculateRoute, calculatePracticeLoop } from './services/routingService';
+import { loadMySpots, saveMySpots, createSpot, spotToZone } from './services/mySpots';
+import { getPreciseLocation } from './services/preciseLocation';
 import { siriVoice } from './services/voiceService';
-import { generateLearnerZonesForLocation } from './services/learnerEngine';
+import { generateLearnerZonesForLocation, isDefaultLocation } from './services/learnerEngine';
 import { getSubscriptionState, refreshSubscriptionState, clearSubscriptionCache } from './services/subscriptionService';
 import { accountsEnabled, getCurrentUser, onAuthChange } from './services/authService';
 import { handleCheckoutReturn, syncPurchasesUser } from './services/paymentsService';
@@ -47,6 +49,9 @@ export default function App() {
   // Locations & Routing State
   const defaultLocation = [-122.4194, 37.7749]; // San Francisco Market St
   const [userLocation, setUserLocation] = useState(defaultLocation);
+  // How exact the current GPS fix is, in metres (null until located), and whether we're locating now.
+  const [locationAccuracy, setLocationAccuracy] = useState(null);
+  const [locating, setLocating] = useState(null); // null | { purpose: 'recenter' | 'spot', accuracy }
   const [recenterTrigger, setRecenterTrigger] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState(PRESET_PLACES);
@@ -63,12 +68,25 @@ export default function App() {
   const [selectedLearnerZone, setSelectedLearnerZone] = useState(null);
 
   // Virtual Cones State
-  const [activeCoursePreset, setActiveCoursePreset] = useState('slalom');
-  const [cones, setCones] = useState(() => {
-    const initialZones = generateLearnerZonesForLocation(defaultLocation);
-    const target = initialZones[0] || LEARNER_ZONES[0];
-    return CONE_PRESETS[0].generateCones(target.coordinates[0], target.coordinates[1]);
-  });
+  // Cones start empty and are placed at the spot the learner picks (or their location).
+  const [activeCoursePreset, setActiveCoursePreset] = useState(null);
+  const [cones, setCones] = useState([]);
+
+  // My practice spots: places the learner marks themselves, so RoadReady works anywhere.
+  const [mySpots, setMySpots] = useState(loadMySpots);
+  const [pendingSpot, setPendingSpot] = useState(null); // { coordinates } waiting for a name
+  const [isPickingSpot, setIsPickingSpot] = useState(false);
+  const [loopLoadingId, setLoopLoadingId] = useState(null);
+  useEffect(() => { saveMySpots(mySpots); }, [mySpots]);
+  const mapZones = useMemo(() => [...learnerZones, ...mySpots.map(spotToZone)], [learnerZones, mySpots]);
+
+  // Short message at the bottom of the screen (route or location problems).
+  const [toast, setToast] = useState(null);
+  useEffect(() => {
+    if (!toast) return undefined;
+    const t = setTimeout(() => setToast(null), 6000);
+    return () => clearTimeout(t);
+  }, [toast]);
   const [isDroppingCustomCone, setIsDroppingCustomCone] = useState(false);
 
   // DMV Test Simulator State
@@ -260,14 +278,27 @@ export default function App() {
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
-  // Debounced Search
+  // Debounced search, biased to the person's location. Only the latest query's answer is shown.
+  const [searchStatus, setSearchStatus] = useState('idle'); // 'idle' | 'loading' | 'done' | 'error'
+  const searchSeq = useRef(0);
   useEffect(() => {
+    const seq = ++searchSeq.current;
+    const hasQuery = searchQuery.trim().length > 0;
+    if (hasQuery) setSearchStatus('loading');
     const timer = setTimeout(async () => {
-      const results = await searchLocations(searchQuery);
-      setSearchResults(results);
-    }, 250);
+      try {
+        const results = await searchLocations(searchQuery, { near: isDefaultLocation(userLocation) ? null : userLocation });
+        if (seq !== searchSeq.current) return;
+        setSearchResults(results);
+        setSearchStatus(hasQuery ? 'done' : 'idle');
+      } catch {
+        if (seq !== searchSeq.current) return;
+        setSearchResults([]);
+        setSearchStatus('error');
+      }
+    }, 300);
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, userLocation]);
 
   // Apply Cone Preset around current active ground
   const handleApplyPreset = (preset) => {
@@ -333,9 +364,94 @@ export default function App() {
   const handleRequestRoute = async (place, mode = routeMode) => {
     const target = place || selectedPlace;
     if (!target) return;
-    const route = await calculateRoute(userLocation, target.coordinates, mode);
-    setRouteData(route);
-    setActiveStepIndex(0);
+    try {
+      const route = await calculateRoute(userLocation, target.coordinates, mode);
+      setRouteData(route);
+      setActiveStepIndex(0);
+    } catch (err) {
+      setToast(err.message || 'Directions are not available right now.');
+    }
+  };
+
+  // ---------- My practice spots ----------
+  // Watches GPS for a few seconds and keeps the most exact fix; the map follows as it sharpens.
+  const locatePrecisely = async (purpose) => {
+    setLocating({ purpose, accuracy: null });
+    try {
+      const fix = await getPreciseLocation({
+        targetAccuracyM: purpose === 'spot' ? 15 : 25,
+        maxWaitMs: purpose === 'spot' ? 12000 : 8000,
+        onProgress: (p) => {
+          setUserLocation(p.coordinates);
+          setLocationAccuracy(p.accuracy);
+          setLocating({ purpose, accuracy: p.accuracy });
+        }
+      });
+      setUserLocation(fix.coordinates);
+      setLocationAccuracy(fix.accuracy);
+      setRecenterTrigger((n) => n + 1);
+      return fix;
+    } catch (err) {
+      setToast(err.message || 'Your location couldn\u2019t be found.');
+      return null;
+    } finally {
+      setLocating(null);
+    }
+  };
+
+  const handleUseMyLocationForSpot = async () => {
+    setIsPickingSpot(false);
+    const fix = await locatePrecisely('spot');
+    if (fix) setPendingSpot({ coordinates: fix.coordinates, accuracy: fix.accuracy });
+  };
+
+  const handlePickSpotOnMap = (lng, lat) => {
+    setIsPickingSpot(false);
+    setPendingSpot({ coordinates: [lng, lat] });
+  };
+
+  const handleSaveSpot = (name) => {
+    if (!pendingSpot) return;
+    const spot = createSpot(name, pendingSpot.coordinates);
+    setMySpots((prev) => [spot, ...prev]);
+    setPendingSpot(null);
+    handleSelectLearnerZone(spotToZone(spot));
+  };
+
+  const handleDeleteSpot = (id) => {
+    setMySpots((prev) => prev.filter((s) => s.id !== id));
+    if (selectedLearnerZone?.id === id) setSelectedLearnerZone(null);
+  };
+
+  const handlePracticeLoop = async (spot) => {
+    setLoopLoadingId(spot.id);
+    try {
+      const loop = await calculatePracticeLoop(spot.coordinates);
+      setSelectedLearnerZone(spotToZone(spot));
+      setSelectedPlace(null);
+      setRouteData({ ...loop, label: `Practice loop around ${spot.name}` });
+      setActiveStepIndex(0);
+    } catch (err) {
+      setToast(err.message || 'Couldn\u2019t build a practice loop here right now.');
+    } finally {
+      setLoopLoadingId(null);
+    }
+  };
+
+  const mySpotsProps = {
+    spots: mySpots,
+    pendingSpot,
+    isPickingSpot,
+    loopLoadingId,
+    locating: locating?.purpose === 'spot' ? locating : null,
+    onStartPickOnMap: () => { setPendingSpot(null); setIsDroppingCustomCone(false); setIsPickingSpot(true); },
+    onCancelPick: () => { setIsPickingSpot(false); setPendingSpot(null); },
+    onUseMyLocation: handleUseMyLocationForSpot,
+    onSaveSpot: handleSaveSpot,
+    onSelectSpot: (spot) => handleSelectLearnerZone(spotToZone(spot)),
+    onDeleteSpot: handleDeleteSpot,
+    onPracticeLoop: handlePracticeLoop,
+    onNavigateToSpot: (spot) => handleRequestRoute({ name: spot.name, coordinates: spot.coordinates }, 'driving')
   };
 
   // Start Navigation
@@ -391,30 +507,16 @@ export default function App() {
     setRecenterTrigger(prev => prev + 1);
     siriVoice.speak("Centered on your current location.");
 
-    if (typeof navigator !== 'undefined' && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const coords = [pos.coords.longitude, pos.coords.latitude];
-          setUserLocation(coords);
-          setRecenterTrigger(prev => prev + 1);
-        },
-        (err) => {
-          console.warn('Geolocation unavailable or denied, centering on default San Francisco location:', err);
-          setUserLocation(defaultLocation);
-          setRecenterTrigger(prev => prev + 1);
-        },
-        { enableHighAccuracy: true, timeout: 5000 }
-      );
-    }
+    locatePrecisely('recenter');
   };
 
   // Map Click
   const handleMapClick = (coords) => {
-    if (isNavigating || isDroppingCustomCone) return;
+    if (isNavigating || isDroppingCustomCone || isPickingSpot) return;
     setSelectedPlace({
       id: `custom-pin-${Date.now()}`,
       name: 'Dropped Pin',
-      subtitle: `${coords[1].toFixed(4)}° N, ${coords[0].toFixed(4)}° W`,
+      subtitle: `${Math.abs(coords[1]).toFixed(4)}° ${coords[1] >= 0 ? 'N' : 'S'}, ${Math.abs(coords[0]).toFixed(4)}° ${coords[0] >= 0 ? 'E' : 'W'}`,
       category: 'Marked Location',
       coordinates: coords,
       priceLevel: 'Free',
@@ -457,8 +559,11 @@ export default function App() {
           isDroppingCustomCone={isDroppingCustomCone}
           activeDmvRoute={activeDmvRoute}
           recenterTrigger={recenterTrigger}
-          learnerZones={learnerZones}
+          learnerZones={mapZones}
           showTraffic={showTraffic}
+          locationAccuracy={locationAccuracy}
+          isPickingSpot={isPickingSpot}
+          onPickSpot={handlePickSpotOnMap}
         />
       </MapErrorBoundary>
 
@@ -503,6 +608,7 @@ export default function App() {
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
               searchResults={searchResults}
+              searchStatus={searchStatus}
               selectedPlace={selectedPlace}
               setSelectedPlace={setSelectedPlace}
               routeData={routeData}
@@ -515,9 +621,11 @@ export default function App() {
               favorites={favorites}
               onToggleFavorite={handleToggleFavorite}
               userLocation={userLocation}
+              locationAccuracy={locationAccuracy}
               selectedLearnerZone={selectedLearnerZone}
               setSelectedLearnerZone={setSelectedLearnerZone}
               learnerZones={learnerZones}
+              mySpots={mySpotsProps}
               activeMainTab={activeMainTab}
               setActiveMainTab={setActiveMainTab}
               activeCoursePreset={activeCoursePreset}
@@ -545,6 +653,7 @@ export default function App() {
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
               searchResults={searchResults}
+              searchStatus={searchStatus}
               selectedPlace={selectedPlace}
               setSelectedPlace={setSelectedPlace}
               routeData={routeData}
@@ -557,9 +666,11 @@ export default function App() {
               favorites={favorites}
               onToggleFavorite={handleToggleFavorite}
               userLocation={userLocation}
+              locationAccuracy={locationAccuracy}
               selectedLearnerZone={selectedLearnerZone}
               setSelectedLearnerZone={setSelectedLearnerZone}
               learnerZones={learnerZones}
+              mySpots={mySpotsProps}
               activeMainTab={activeMainTab}
               setActiveMainTab={setActiveMainTab}
               activeCoursePreset={activeCoursePreset}
@@ -626,6 +737,16 @@ export default function App() {
           {MapContent}
         </div>
       )}
+      {toast && (
+        <div
+          role="status"
+          className="fixed z-50 left-1/2 -translate-x-1/2 bottom-6 w-[calc(100%-32px)] max-w-sm px-4 py-3 rounded-2xl bg-zinc-900 text-white text-xs font-semibold shadow-2xl flex items-start justify-between gap-3"
+        >
+          <span>{toast}</span>
+          <button onClick={() => setToast(null)} aria-label="Dismiss" className="text-white/70 hover:text-white">&times;</button>
+        </div>
+      )}
+
       {/* B2C Learner PRO Pass Paywall Modal */}
       <Suspense fallback={null}>
         <LearnerProPaywallModal

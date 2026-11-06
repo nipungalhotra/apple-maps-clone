@@ -22,6 +22,7 @@ const formatTimeAgo = (iso) => {
   return days === 1 ? 'Yesterday' : `${days}d ago`;
 };
 import ConeCourseBuilder from './ConeCourseBuilder';
+import MySpotsSection from './MySpotsSection';
 import DMVTestSimulator from './DMVTestSimulator';
 import LearnerPassportModal from './LearnerPassportModal';
 
@@ -51,7 +52,9 @@ export default function LearnerModePanel({
   onAddPracticeHour,
   // B2C Pro Pass State
   isPro = false,
-  onOpenPaywall
+  onOpenPaywall,
+  // My practice spots (works anywhere; see MySpotsSection)
+  mySpots = null
 }) {
   const [vehicleFilter, setVehicleFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -90,7 +93,11 @@ export default function LearnerModePanel({
     sourceZones: learnerZones
   });
 
-  const activeZone = selectedLearnerZone || zones[0];
+  // A learner's own spot has no curated rating or reports, so the evaluator, weather score and
+  // community tabs keep using a curated zone; cones follow whatever spot is selected.
+  const selectedIsUserSpot = Boolean(selectedLearnerZone?.isUserSpot);
+  const activeZone = (selectedIsUserSpot ? null : selectedLearnerZone) || zones[0];
+  const coneAnchor = selectedLearnerZone ? selectedLearnerZone.coordinates : userLocation;
 
   // Base evaluation
   const baseEvaluation = activeZone ? evaluateLocationSafety({
@@ -321,7 +328,19 @@ export default function LearnerModePanel({
       {/* TAB 1: SAFE ZONES LIST */}
       {activeTab === 'zones' && (
         <div className="space-y-3">
-          {selectedLearnerZone && (
+          {mySpots && (
+            <MySpotsSection
+              {...mySpots}
+              userLocation={userLocation}
+              selectedZoneId={selectedLearnerZone?.id}
+              onSelectSpot={(spot, opts) => {
+                mySpots.onSelectSpot(spot);
+                if (opts?.openCones) setActiveTab('cones');
+              }}
+            />
+          )}
+
+          {selectedLearnerZone && !selectedIsUserSpot && (
             <div className="p-3.5 bg-white/80 dark:bg-zinc-800/80 rounded-2xl border-2 border-emerald-500/40 shadow-lg space-y-3 animate-slideDown">
               <div className="flex items-start justify-between">
                 <div>
@@ -480,7 +499,8 @@ export default function LearnerModePanel({
           onClearCones={onClearCones}
           isDroppingCustomCone={isDroppingCustomCone}
           setIsDroppingCustomCone={setIsDroppingCustomCone}
-          selectedGroundCoord={activeZone ? activeZone.coordinates : userLocation}
+          selectedGroundCoord={coneAnchor}
+          anchorLabel={selectedLearnerZone ? selectedLearnerZone.name : 'your location'}
           isPro={isPro}
           onOpenPaywall={onOpenPaywall}
         />

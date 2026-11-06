@@ -15,6 +15,7 @@ export default function ConeCourseBuilder({
   isDroppingCustomCone,
   setIsDroppingCustomCone,
   selectedGroundCoord,
+  anchorLabel = 'your location',
   isPro = false,
   onOpenPaywall
 }) {
@@ -68,7 +69,7 @@ export default function ConeCourseBuilder({
                 )}
               </h4>
               <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                Drop drills on any open ground ({cones.length} cones placed)
+                Placed at {anchorLabel} ({cones.length} {cones.length === 1 ? 'cone' : 'cones'})
               </p>
             </div>
           </div>
@@ -94,7 +95,7 @@ export default function ConeCourseBuilder({
             <span>MSF-Style Practice Cones (Box & Swerve)</span>
           </span>
           <span className="text-[9px] bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black px-2 py-0.5 rounded-full shadow-xs">
-            $14.99 Pack
+            PRO
           </span>
         </button>
 
